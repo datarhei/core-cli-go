@@ -8,6 +8,12 @@ A CLI for connection to instances of datarhei Core. Currently only Core versions
 go install github.com/datarhei/core-cli-go@latest
 ```
 
+This will the CLI binary to `$GOPATH/bin/core-cli-go`. You can rename that file (until the `-o` option is allowed for `go install`) to a more consice name:
+
+```
+mv $GOPATH/bin/core-cli-go $GOPATH/bin/corecli
+```
+
 ## Usage
 
 You see all commands when you call the binary without any arguments:
