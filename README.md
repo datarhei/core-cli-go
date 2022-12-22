@@ -113,7 +113,7 @@ corecli process start example
 
 List all processes on the core:
 
-````
+```
 corecli process list
 ```
 
@@ -128,4 +128,3 @@ Remove the process:
 ```
 corecli process delete example
 ```
-````
