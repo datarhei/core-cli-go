@@ -1,4 +1,4 @@
-module github.com/datarhei/corecli
+module github.com/datarhei/core-cli-go
 
 go 1.19
 
