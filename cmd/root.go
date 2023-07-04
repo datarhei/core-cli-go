@@ -7,7 +7,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var globalFlagConfigFile string
+var globalFlagCore string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -35,7 +36,8 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.corecli.json)")
+	rootCmd.PersistentFlags().StringVar(&globalFlagConfigFile, "config", "", "config file (default is $HOME/.corecli.json)")
+	rootCmd.PersistentFlags().StringVar(&globalFlagCore, "core", "", "core to connect to instead of the selected one")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -47,9 +49,9 @@ func initConfig() {
 	viper.SetDefault("cores.selected", "")
 	viper.SetDefault("cores.list", map[string]string{})
 
-	if cfgFile != "" {
+	if globalFlagConfigFile != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+		viper.SetConfigFile(globalFlagConfigFile)
 	} else {
 		// Find home directory.
 		home, err := os.UserHomeDir()

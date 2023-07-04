@@ -18,6 +18,9 @@ import (
 
 func connectSelectedCore() (coreclient.RestClient, error) {
 	selected := viper.GetString("cores.selected")
+	if len(globalFlagCore) != 0 {
+		selected = globalFlagCore
+	}
 	list := viper.GetStringMapString("cores.list")
 
 	core, ok := list[selected]
