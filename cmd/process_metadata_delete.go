@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	coreclient "github.com/datarhei/core-client-go/v16"
+
 	"github.com/spf13/cobra"
 )
 
@@ -11,13 +13,15 @@ var deleteMetadataProcessCmd = &cobra.Command{
 	Long:  "Delete a specific metadata key",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 		key := args[1]
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		return client.ProcessMetadataSet(id, key, nil)
 	},

@@ -6,7 +6,9 @@ import (
 	"io"
 	"os"
 
+	coreclient "github.com/datarhei/core-client-go/v16"
 	"github.com/datarhei/core-client-go/v16/api"
+
 	"github.com/spf13/cobra"
 )
 
@@ -44,12 +46,14 @@ var updateProcessCmd = &cobra.Command{
 			return err
 		}
 
-		id := args[0]
+		pid := args[0]
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		if err := client.ProcessUpdate(id, config); err != nil {
 			return err

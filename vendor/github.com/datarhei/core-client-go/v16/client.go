@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/datarhei/core-client-go/v16/api"
@@ -37,11 +39,13 @@ type RestClient interface {
 	// Address returns the address of the connected datarhei Core
 	Address() string
 
-	About() api.About // GET /
+	Ping() (time.Duration, error)
 
-	Config() (int64, api.Config, error) // GET /config
-	ConfigSet(config interface{}) error // POST /config
-	ConfigReload() error                // GET /config/reload
+	About(cached bool) (api.About, error) // GET /
+
+	Config() (int64, api.Config, error) // GET /v3/config
+	ConfigSet(config interface{}) error // POST /v3/config
+	ConfigReload() error                // GET /v3/config/reload
 
 	Graph(query api.GraphQuery) (api.GraphResponse, error) // POST /graph
 
@@ -57,13 +61,14 @@ type RestClient interface {
 	MemFSDeleteFile(path string) error                    // DELETE /v3/fs/mem/{path}
 	MemFSAddFile(path string, data io.Reader) error       // PUT /v3/fs/mem/{path}
 
-	FilesystemList(name, pattern, sort, order string) ([]api.FileInfo, error) // GET /v3/fs/{name}
-	FilesystemHasFile(name, path string) bool                                 // HEAD /v3/fs/{name}/{path}
-	FilesystemGetFile(name, path string) (io.ReadCloser, error)               // GET /v3/fs/{name}/{path}
-	FilesystemDeleteFile(name, path string) error                             // DELETE /v3/fs/{name}/{path}
-	FilesystemAddFile(name, path string, data io.Reader) error                // PUT /v3/fs/{name}/{path}
+	FilesystemList(name, pattern, sort, order string) ([]api.FileInfo, error)       // GET /v3/fs/{name}
+	FilesystemHasFile(name, path string) bool                                       // HEAD /v3/fs/{name}/{path}
+	FilesystemGetFile(name, path string) (io.ReadCloser, error)                     // GET /v3/fs/{name}/{path}
+	FilesystemGetFileOffset(name, path string, offset int64) (io.ReadCloser, error) // GET /v3/fs/{name}/{path}
+	FilesystemDeleteFile(name, path string) error                                   // DELETE /v3/fs/{name}/{path}
+	FilesystemAddFile(name, path string, data io.Reader) error                      // PUT /v3/fs/{name}/{path}
 
-	Log() ([]api.LogEvent, error) // GET /log
+	Log() ([]api.LogEvent, error) // GET /v3/log
 
 	Metadata(key string) (api.Metadata, error)           // GET /v3/metadata/{key}
 	MetadataSet(key string, metadata api.Metadata) error // PUT /v3/metadata/{key}
@@ -71,21 +76,21 @@ type RestClient interface {
 	MetricsList() ([]api.MetricsDescription, error)              // GET /v3/metrics
 	Metrics(query api.MetricsQuery) (api.MetricsResponse, error) // POST /v3/metrics
 
-	ProcessList(opts ProcessListOptions) ([]api.Process, error)     // GET /v3/process
-	ProcessAdd(p api.ProcessConfig) error                           // POST /v3/process
-	Process(id string, filter []string) (api.Process, error)        // GET /v3/process/{id}
-	ProcessUpdate(id string, p api.ProcessConfig) error             // PUT /v3/process/{id}
-	ProcessDelete(id string) error                                  // DELETE /v3/process/{id}
-	ProcessCommand(id, command string) error                        // PUT /v3/process/{id}/command
-	ProcessProbe(id string) (api.Probe, error)                      // GET /v3/process/{id}/probe
-	ProcessConfig(id string) (api.ProcessConfig, error)             // GET /v3/process/{id}/config
-	ProcessReport(id string) (api.ProcessReport, error)             // GET /v3/process/{id}/report
-	ProcessState(id string) (api.ProcessState, error)               // GET /v3/process/{id}/state
-	ProcessMetadata(id, key string) (api.Metadata, error)           // GET /v3/process/{id}/metadata/{key}
-	ProcessMetadataSet(id, key string, metadata api.Metadata) error // PUT /v3/process/{id}/metadata/{key}
+	ProcessList(opts ProcessListOptions) ([]api.Process, error)               // GET /v3/process
+	ProcessAdd(p api.ProcessConfig) error                                     // POST /v3/process
+	Process(id ProcessID, filter []string) (api.Process, error)               // GET /v3/process/{id}
+	ProcessUpdate(id ProcessID, p api.ProcessConfig) error                    // PUT /v3/process/{id}
+	ProcessDelete(id ProcessID) error                                         // DELETE /v3/process/{id}
+	ProcessCommand(id ProcessID, command string) error                        // PUT /v3/process/{id}/command
+	ProcessProbe(id ProcessID) (api.Probe, error)                             // GET /v3/process/{id}/probe
+	ProcessConfig(id ProcessID) (api.ProcessConfig, error)                    // GET /v3/process/{id}/config
+	ProcessReport(id ProcessID) (api.ProcessReport, error)                    // GET /v3/process/{id}/report
+	ProcessState(id ProcessID) (api.ProcessState, error)                      // GET /v3/process/{id}/state
+	ProcessMetadata(id ProcessID, key string) (api.Metadata, error)           // GET /v3/process/{id}/metadata/{key}
+	ProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error // PUT /v3/process/{id}/metadata/{key}
 
 	RTMPChannels() ([]api.RTMPChannel, error) // GET /v3/rtmp
-	SRTChannels() (api.SRTChannels, error)    // GET /v3/srt
+	SRTChannels() ([]api.SRTChannel, error)   // GET /v3/srt
 
 	Sessions(collectors []string) (api.SessionsSummary, error)      // GET /v3/session
 	SessionsActive(collectors []string) (api.SessionsActive, error) // GET /v3/session/active
@@ -93,7 +98,7 @@ type RestClient interface {
 	Skills() (api.Skills, error) // GET /v3/skills
 	SkillsReload() error         // GET /v3/skills/reload
 
-	WidgetProcess(id string) (api.WidgetProcess, error) // GET /v3/widget/process/{id}
+	WidgetProcess(id ProcessID) (api.WidgetProcess, error) // GET /v3/widget/process/{id}
 }
 
 // Config is the configuration for a new REST API client.
@@ -127,6 +132,7 @@ type restclient struct {
 	auth0Token   string
 	client       HTTPClient
 	about        api.About
+	aboutLock    sync.RWMutex
 
 	version struct {
 		connectedCore *semver.Version
@@ -148,21 +154,30 @@ func New(config Config) (RestClient, error) {
 		client:       config.Client,
 	}
 
+	u, err := url.Parse(r.address)
+	if err == nil {
+		username := u.User.Username()
+		if len(username) != 0 {
+			r.username = username
+		}
+
+		if password, ok := u.User.Password(); ok {
+			r.password = password
+		}
+
+		u.User = nil
+		u.RawQuery = ""
+		u.Fragment = ""
+
+		r.address = u.String()
+	}
+
+	r.address = strings.TrimSuffix(r.address, "/")
+
 	if r.client == nil {
 		r.client = &http.Client{
 			Timeout: 15 * time.Second,
 		}
-	}
-
-	about, err := r.info()
-	if err != nil {
-		return nil, err
-	}
-
-	r.about = about
-
-	if r.about.App != coreapp {
-		return nil, fmt.Errorf("didn't receive the expected API response (got: %s, want: %s)", r.about.Name, coreapp)
 	}
 
 	mustNewConstraint := func(constraint string) *semver.Constraints {
@@ -175,20 +190,35 @@ func New(config Config) (RestClient, error) {
 		"GET/api/v3/metrics": mustNewConstraint("^16.10.0"),
 	}
 
-	if len(r.about.ID) != 0 {
+	about, err := r.info()
+	if err != nil {
+		return nil, err
+	}
+
+	if about.App != coreapp {
+		return nil, fmt.Errorf("didn't receive the expected API response (got: %s, want: %s)", about.Name, coreapp)
+	}
+
+	r.aboutLock.Lock()
+	r.about = about
+	r.aboutLock.Unlock()
+
+	if len(about.ID) != 0 {
 		c, _ := semver.NewConstraint(coreversion)
-		v, err := semver.NewVersion(r.about.Version.Number)
+		v, err := semver.NewVersion(about.Version.Number)
 		if err != nil {
 			return nil, err
 		}
 
 		if !c.Check(v) {
-			return nil, fmt.Errorf("the core version (%s) is not supported, because a version %s is required", r.about.Version.Number, coreversion)
+			return nil, fmt.Errorf("the core version (%s) is not supported, because a version %s is required", about.Version.Number, coreversion)
 		}
 
+		r.aboutLock.Lock()
 		r.version.connectedCore = v
+		r.aboutLock.Unlock()
 	} else {
-		v, err := semver.NewVersion(r.about.Version.Number)
+		v, err := semver.NewVersion(about.Version.Number)
 		if err != nil {
 			return nil, err
 		}
@@ -205,11 +235,17 @@ func New(config Config) (RestClient, error) {
 	return r, nil
 }
 
-func (r restclient) String() string {
+func (r *restclient) String() string {
+	r.aboutLock.RLock()
+	defer r.aboutLock.RUnlock()
+
 	return fmt.Sprintf("%s %s (%s) %s @ %s", r.about.Name, r.about.Version.Number, r.about.Version.Arch, r.about.ID, r.address)
 }
 
 func (r *restclient) ID() string {
+	r.aboutLock.RLock()
+	defer r.aboutLock.RUnlock()
+
 	return r.about.ID
 }
 
@@ -221,8 +257,43 @@ func (r *restclient) Address() string {
 	return r.address
 }
 
-func (r *restclient) About() api.About {
-	return r.about
+func (r *restclient) About(cached bool) (api.About, error) {
+	if cached {
+		return r.about, nil
+	}
+
+	about, err := r.info()
+	if err != nil {
+		return api.About{}, err
+	}
+
+	r.about = about
+
+	return about, nil
+}
+
+func (r *restclient) Ping() (time.Duration, error) {
+	req, err := http.NewRequest(http.MethodGet, r.address+"/ping", nil)
+	if err != nil {
+		return time.Duration(0), err
+	}
+
+	start := time.Now()
+
+	status, body, err := r.request(req)
+	if err != nil {
+		return time.Duration(0), err
+	}
+
+	defer body.Close()
+
+	if status != 200 {
+		return time.Duration(0), err
+	}
+
+	io.ReadAll(body)
+
+	return time.Since(start), nil
 }
 
 func (r *restclient) login() error {
@@ -318,8 +389,10 @@ func (r *restclient) login() error {
 		return fmt.Errorf("the core version (%s) is not supported, because a version %s is required", about.Version.Number, coreversion)
 	}
 
+	r.aboutLock.Lock()
 	r.version.connectedCore = v
 	r.about = about
+	r.aboutLock.Unlock()
 
 	return nil
 }
@@ -330,6 +403,9 @@ func (r *restclient) checkVersion(method, path string) error {
 		return nil
 	}
 
+	r.aboutLock.RLock()
+	defer r.aboutLock.RUnlock()
+
 	if !c.Check(r.version.connectedCore) {
 		return fmt.Errorf("this method is only available in version %s of the core", c.String())
 	}
@@ -338,6 +414,10 @@ func (r *restclient) checkVersion(method, path string) error {
 }
 
 func (r *restclient) refresh() error {
+	if len(r.refreshToken) == 0 {
+		return fmt.Errorf("no refresh token defined")
+	}
+
 	req, err := http.NewRequest("GET", r.address+r.prefix+"/login/refresh", nil)
 	if err != nil {
 		return err
@@ -406,14 +486,23 @@ func (r *restclient) request(req *http.Request) (int, io.ReadCloser, error) {
 	return resp.StatusCode, resp.Body, nil
 }
 
-func (r *restclient) stream(method, path, contentType string, data io.Reader) (io.ReadCloser, error) {
+func (r *restclient) stream(method, path string, query *url.Values, header http.Header, contentType string, data io.Reader) (io.ReadCloser, error) {
 	if err := r.checkVersion(method, r.prefix+path); err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(method, r.address+r.prefix+path, data)
+	u := r.address + r.prefix + path
+	if query != nil {
+		u += "?" + query.Encode()
+	}
+
+	req, err := http.NewRequest(method, u, data)
 	if err != nil {
 		return nil, err
+	}
+
+	if header != nil {
+		req.Header = header.Clone()
 	}
 
 	if method == "POST" || method == "PUT" {
@@ -471,8 +560,8 @@ func (r *restclient) stream(method, path, contentType string, data io.Reader) (i
 	return body, nil
 }
 
-func (r *restclient) call(method, path, contentType string, data io.Reader) ([]byte, error) {
-	body, err := r.stream(method, path, contentType, data)
+func (r *restclient) call(method, path string, query *url.Values, header http.Header, contentType string, data io.Reader) ([]byte, error) {
+	body, err := r.stream(method, path, query, header, contentType, data)
 	if err != nil {
 		return nil, err
 	}

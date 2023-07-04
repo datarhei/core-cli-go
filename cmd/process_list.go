@@ -42,7 +42,7 @@ var listProcessCmd = &cobra.Command{
 
 		t := table.NewWriter()
 
-		t.AppendHeader(table.Row{"ID", "Reference", "Order", "State", "Memory", "CPU", "Runtime"})
+		t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime"})
 
 		for _, p := range list {
 			runtime := p.State.Runtime
@@ -76,6 +76,7 @@ var listProcessCmd = &cobra.Command{
 
 			t.AppendRow(table.Row{
 				p.ID,
+				p.Domain,
 				p.Reference,
 				order,
 				state,
@@ -86,11 +87,12 @@ var listProcessCmd = &cobra.Command{
 		}
 
 		t.SetColumnConfigs([]table.ColumnConfig{
-			{Number: 3, Align: text.AlignRight},
+			{Number: 2, Align: text.AlignRight},
 			{Number: 4, Align: text.AlignRight},
 			{Number: 5, Align: text.AlignRight},
 			{Number: 6, Align: text.AlignRight},
 			{Number: 7, Align: text.AlignRight},
+			{Number: 8, Align: text.AlignRight},
 		})
 
 		t.SortBy([]table.SortBy{

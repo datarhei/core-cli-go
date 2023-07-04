@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// updateProcessCmd represents the update command
+// addProcessCmd represents the add command
 var addProcessCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a process",

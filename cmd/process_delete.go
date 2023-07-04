@@ -15,7 +15,7 @@ var deleteProcessCmd = &cobra.Command{
 	Long:  "Delete the process with the given ID or reference.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 		reference, _ := cmd.Flags().GetBool("reference")
 
 		client, err := connectSelectedCore()
@@ -23,19 +23,22 @@ var deleteProcessCmd = &cobra.Command{
 			return err
 		}
 
+		id := coreclient.ParseProcessID(pid)
+
 		if reference {
 			list, err := client.ProcessList(coreclient.ProcessListOptions{
-				RefPattern: id,
+				RefPattern: pid,
 			})
 			if err != nil {
 				return err
 			}
 
 			for _, p := range list {
-				if err := client.ProcessDelete(p.ID); err != nil {
-					fmt.Printf("%s error %s\n", p.ID, err.Error())
+				id := coreclient.ProcessIDFromProcess(p)
+				if err := client.ProcessDelete(id); err != nil {
+					fmt.Printf("%s error %s\n", id, err.Error())
 				} else {
-					fmt.Printf("%s delete\n", p.ID)
+					fmt.Printf("%s delete\n", id)
 				}
 			}
 

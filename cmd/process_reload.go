@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	coreclient "github.com/datarhei/core-client-go/v16"
+
 	"github.com/spf13/cobra"
 )
 
@@ -13,12 +15,14 @@ var reloadProcessCmd = &cobra.Command{
 	Long:  "Reload the process with the given ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		if err := client.ProcessCommand(id, "reload"); err != nil {
 			return err

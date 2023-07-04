@@ -17,7 +17,10 @@ var aboutCoreCmd = &cobra.Command{
 			return err
 		}
 
-		about := client.About()
+		about, err := client.About(true)
+		if err != nil {
+			return err
+		}
 
 		if err := writeJSON(os.Stdout, about, true); err != nil {
 			return err

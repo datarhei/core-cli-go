@@ -44,9 +44,14 @@ func connectSelectedCore() (coreclient.RestClient, error) {
 		return nil, fmt.Errorf("can't connect to core at %s: %w", address, err)
 	}
 
-	version := client.About().Version.Number
-	corename := client.About().Name
-	coreid := client.About().ID
+	about, err := client.About(true)
+	if err != nil {
+		return nil, fmt.Errorf("can't fetch details from core at %s: %w", address, err)
+	}
+
+	version := about.Version.Number
+	corename := about.Name
+	coreid := about.ID
 	accessToken, refreshToken := client.Tokens()
 
 	query := u.Query()

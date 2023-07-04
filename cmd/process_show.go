@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	coreclient "github.com/datarhei/core-client-go/v16"
+
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
@@ -18,7 +20,7 @@ var showProcessCmd = &cobra.Command{
 	Long:  "Show the process with the given ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 		asRaw, _ := cmd.Flags().GetBool("raw")
 		config, _ := cmd.Flags().GetBool("cfg")
 		state, _ := cmd.Flags().GetBool("state")
@@ -30,6 +32,8 @@ var showProcessCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		filter := []string{}
 		if config {

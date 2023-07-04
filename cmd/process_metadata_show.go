@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	coreclient "github.com/datarhei/core-client-go/v16"
+
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +15,7 @@ var showMetadataProcessCmd = &cobra.Command{
 	Long:  "Show the metadata of the process with the given ID",
 	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 		key := ""
 		if len(args) == 2 {
 			key = args[1]
@@ -23,6 +25,8 @@ var showMetadataProcessCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		metadata, err := client.ProcessMetadata(id, key)
 		if err != nil {

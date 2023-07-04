@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	coreclient "github.com/datarhei/core-client-go/v16"
 	"github.com/datarhei/core-client-go/v16/api"
+
 	"github.com/spf13/cobra"
 )
 
@@ -16,12 +18,14 @@ var editProcessCmd = &cobra.Command{
 	Long:  "Edit the config of a process",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		process, err := client.Process(id, []string{"config"})
 		if err != nil {

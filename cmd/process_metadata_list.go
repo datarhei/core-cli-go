@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	coreclient "github.com/datarhei/core-client-go/v16"
+
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 )
@@ -14,12 +16,14 @@ var listMetadataProcessCmd = &cobra.Command{
 	Long:  "List all metadata keys",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		m, err := client.ProcessMetadata(id, "")
 		if err != nil {

@@ -15,6 +15,8 @@ var templateProcessCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config := api.ProcessConfig{
 			ID:        "",
+			Owner:     "",
+			Domain:    "",
 			Type:      "ffmpeg",
 			Reference: "",
 			Input: []api.ProcessConfigIO{
@@ -44,6 +46,8 @@ var templateProcessCmd = &cobra.Command{
 			ReconnectDelay: 0,
 			Autostart:      false,
 			StaleTimeout:   0,
+			Timeout:        0,
+			LogPatterns:    []string{},
 			Limits:         api.ProcessConfigLimits{},
 		}
 

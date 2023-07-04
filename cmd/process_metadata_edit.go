@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	coreclient "github.com/datarhei/core-client-go/v16"
 	"github.com/datarhei/core-client-go/v16/api"
+
 	"github.com/spf13/cobra"
 )
 
@@ -16,13 +18,15 @@ var editMetadataProcessCmd = &cobra.Command{
 	Long:  "Edit a specific metadata key",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 		key := args[1]
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		found := true
 

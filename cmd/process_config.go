@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	coreclient "github.com/datarhei/core-client-go/v16"
+
 	"github.com/spf13/cobra"
 )
 
@@ -13,12 +15,14 @@ var configProcessCmd = &cobra.Command{
 	Long:  "Show the config of the process with the given ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		id := args[0]
+		pid := args[0]
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
+
+		id := coreclient.ParseProcessID(pid)
 
 		config, err := client.ProcessConfig(id)
 		if err != nil {
