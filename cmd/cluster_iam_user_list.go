@@ -3,28 +3,25 @@ package cmd
 import (
 	"os"
 
-	"github.com/datarhei/core-client-go/v16/api"
-
 	"github.com/spf13/cobra"
 )
 
-var iamUserTemplateCmd = &cobra.Command{
-	Use:   "template",
-	Short: "Print a template for a user config",
-	Long:  "Print a template for a user config.",
+var clusterIamUserListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all users",
+	Long:  "List all users in the cluster",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		user := api.IAMUser{
-			Name: "TODO",
-			Policies: []api.IAMPolicy{
-				{
-					Domain:   "$none",
-					Resource: "",
-					Actions:  []string{"any"},
-				},
-			},
+		client, err := connectSelectedCore()
+		if err != nil {
+			return err
 		}
 
-		if err := writeJSON(os.Stdout, user, false); err != nil {
+		list, err := client.ClusterIdentitiesList()
+		if err != nil {
+			return err
+		}
+
+		if err := writeJSON(os.Stdout, list, true); err != nil {
 			return err
 		}
 
@@ -33,7 +30,7 @@ var iamUserTemplateCmd = &cobra.Command{
 }
 
 func init() {
-	iamUserCmd.AddCommand(iamUserTemplateCmd)
+	clusterIamUserCmd.AddCommand(clusterIamUserListCmd)
 
 	// Here you will define your flags and configuration settings.
 

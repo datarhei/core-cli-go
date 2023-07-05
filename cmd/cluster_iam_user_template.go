@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var iamUserTemplateCmd = &cobra.Command{
+var clusterIamUserTemplateCmd = &cobra.Command{
 	Use:   "template",
 	Short: "Print a template for a user config",
 	Long:  "Print a template for a user config.",
@@ -33,7 +33,7 @@ var iamUserTemplateCmd = &cobra.Command{
 }
 
 func init() {
-	iamUserCmd.AddCommand(iamUserTemplateCmd)
+	clusterIamUserCmd.AddCommand(clusterIamUserTemplateCmd)
 
 	// Here you will define your flags and configuration settings.
 
