@@ -8,11 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processStartCmd represents the show command
-var processStartCmd = &cobra.Command{
-	Use:   "start [processid]",
-	Short: "Start the process with the given ID",
-	Long:  "Start the process with the given ID",
+var clusterProcessRestartCmd = &cobra.Command{
+	Use:   "restart [processid]",
+	Short: "Restart the process with the given ID",
+	Long:  "Restart the process with the given ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pid := args[0]
@@ -24,16 +23,16 @@ var processStartCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		if err := client.ProcessCommand(id, "start"); err != nil {
+		if err := client.ClusterProcessCommand(id, "restart"); err != nil {
 			return err
 		}
 
-		fmt.Printf("%s start\n", id)
+		fmt.Printf("%s restart\n", id)
 
 		return nil
 	},
 }
 
 func init() {
-	processCmd.AddCommand(processStartCmd)
+	clusterProcessCmd.AddCommand(clusterProcessRestartCmd)
 }

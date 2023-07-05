@@ -9,7 +9,7 @@ import (
 )
 
 // stooProcessCmd represents the show command
-var stopProcessCmd = &cobra.Command{
+var processStopCmd = &cobra.Command{
 	Use:   "stop [processid]",
 	Short: "Stop the process with the given ID",
 	Long:  "Stop the process with the given ID",
@@ -35,5 +35,5 @@ var stopProcessCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(stopProcessCmd)
+	processCmd.AddCommand(processStopCmd)
 }

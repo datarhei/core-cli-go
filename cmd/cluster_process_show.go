@@ -13,8 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processShowCmd represents the show command
-var processShowCmd = &cobra.Command{
+var clusterProcessShowCmd = &cobra.Command{
 	Use:   "show [processid]",
 	Short: "Show the process with the given ID",
 	Long:  "Show the process with the given ID",
@@ -49,7 +48,7 @@ var processShowCmd = &cobra.Command{
 			filter = append(filter, "metadata")
 		}
 
-		process, err := client.Process(id, filter)
+		process, err := client.ClusterProcess(id, filter)
 		if err != nil {
 			return err
 		}
@@ -153,7 +152,7 @@ var processShowCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processShowCmd)
+	clusterProcessCmd.AddCommand(clusterProcessShowCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -163,9 +162,9 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	processShowCmd.Flags().BoolP("cfg", "c", false, "Include the process config")
-	processShowCmd.Flags().BoolP("state", "s", false, "Include the process state")
-	processShowCmd.Flags().BoolP("report", "r", false, "Include the process config")
-	processShowCmd.Flags().BoolP("metadata", "m", false, "Include the process config")
-	processShowCmd.Flags().Bool("command", false, "Show the process command")
+	clusterProcessShowCmd.Flags().BoolP("cfg", "c", false, "Include the process config")
+	clusterProcessShowCmd.Flags().BoolP("state", "s", false, "Include the process state")
+	clusterProcessShowCmd.Flags().BoolP("report", "r", false, "Include the process config")
+	clusterProcessShowCmd.Flags().BoolP("metadata", "m", false, "Include the process config")
+	clusterProcessShowCmd.Flags().Bool("command", false, "Show the process command")
 }

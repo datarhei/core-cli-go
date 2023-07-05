@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listSkillsCmd represents the list command
-var listSkillsCmd = &cobra.Command{
+// skillsListCmd represents the list command
+var skillsListCmd = &cobra.Command{
 	Use:   "list [name]?",
 	Short: "List skills",
 	Long:  "List FFmpeg skills",
@@ -58,5 +58,5 @@ var listSkillsCmd = &cobra.Command{
 }
 
 func init() {
-	skillsCmd.AddCommand(listSkillsCmd)
+	skillsCmd.AddCommand(skillsListCmd)
 }

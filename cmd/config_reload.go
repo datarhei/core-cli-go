@@ -4,8 +4,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// reloadConfigCmd represents the list command
-var reloadConfigCmd = &cobra.Command{
+// configReloadCmd represents the list command
+var configReloadCmd = &cobra.Command{
 	Use:   "reload",
 	Short: "Reload the current config",
 	Long:  "Reload the current config.",
@@ -25,5 +25,5 @@ var reloadConfigCmd = &cobra.Command{
 }
 
 func init() {
-	configCmd.AddCommand(reloadConfigCmd)
+	configCmd.AddCommand(configReloadCmd)
 }

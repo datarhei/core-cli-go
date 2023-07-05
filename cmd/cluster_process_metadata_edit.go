@@ -11,8 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processMetadataEditCmd represents the list command
-var processMetadataEditCmd = &cobra.Command{
+var clusterProcessMetadataEditCmd = &cobra.Command{
 	Use:   "edit [processid] [key]",
 	Short: "Edit metadata",
 	Long:  "Edit a specific metadata key",
@@ -30,7 +29,7 @@ var processMetadataEditCmd = &cobra.Command{
 
 		found := true
 
-		m, err := client.ProcessMetadata(id, key)
+		m, err := client.ClusterProcessMetadata(id, key)
 		if err != nil {
 			apierr, ok := err.(api.Error)
 			if !ok {
@@ -74,10 +73,10 @@ var processMetadataEditCmd = &cobra.Command{
 			return err
 		}
 
-		return client.ProcessMetadataSet(id, key, em)
+		return client.ClusterProcessMetadataSet(id, key, em)
 	},
 }
 
 func init() {
-	processMetadataCmd.AddCommand(processMetadataEditCmd)
+	clusterProcessMetadataCmd.AddCommand(clusterProcessMetadataEditCmd)
 }

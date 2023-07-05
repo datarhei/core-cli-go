@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// stateProcessCmd represents the show command
-var stateProcessCmd = &cobra.Command{
+// processStateCmd represents the show command
+var processStateCmd = &cobra.Command{
 	Use:   "state [processid]",
 	Short: "Show the state of the process with the given ID",
 	Long:  "Show the state of the process with the given ID",
@@ -24,12 +24,12 @@ var stateProcessCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		state, err := client.ProcessState(id)
+		process, err := client.Process(id, []string{"state"})
 		if err != nil {
 			return err
 		}
 
-		if err := writeJSON(os.Stdout, state, true); err != nil {
+		if err := writeJSON(os.Stdout, process.State, true); err != nil {
 			return err
 		}
 
@@ -38,5 +38,5 @@ var stateProcessCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(stateProcessCmd)
+	processCmd.AddCommand(processStateCmd)
 }

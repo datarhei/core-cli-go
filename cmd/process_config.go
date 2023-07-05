@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// configProcessCmd represents the show command
-var configProcessCmd = &cobra.Command{
+// processConfigCmd represents the show command
+var processConfigCmd = &cobra.Command{
 	Use:   "config [processid]",
 	Short: "Show the config of the process with the given ID",
 	Long:  "Show the config of the process with the given ID",
@@ -24,12 +24,12 @@ var configProcessCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		config, err := client.ProcessConfig(id)
+		process, err := client.Process(id, []string{"config"})
 		if err != nil {
 			return err
 		}
 
-		if err := writeJSON(os.Stdout, config, true); err != nil {
+		if err := writeJSON(os.Stdout, process.Config, true); err != nil {
 			return err
 		}
 
@@ -38,5 +38,5 @@ var configProcessCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(configProcessCmd)
+	processCmd.AddCommand(processConfigCmd)
 }

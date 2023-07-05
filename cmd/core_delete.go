@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// deleteCoreCmd represents the delete command
-var deleteCoreCmd = &cobra.Command{
+// coreDeleteCmd represents the delete command
+var coreDeleteCmd = &cobra.Command{
 	Use:   "delete [name]",
 	Short: "Remove a core",
 	Long:  `Remove a core from the list of known cores.`,
@@ -37,7 +37,7 @@ var deleteCoreCmd = &cobra.Command{
 }
 
 func init() {
-	coreCmd.AddCommand(deleteCoreCmd)
+	coreCmd.AddCommand(coreDeleteCmd)
 
 	// Here you will define your flags and configuration settings.
 

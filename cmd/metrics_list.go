@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listMetricsCmd represents the list command
-var listMetricsCmd = &cobra.Command{
+// metricsListCmd represents the list command
+var metricsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all known metrics",
 	Long:  "List all known metrics",
@@ -42,5 +42,5 @@ var listMetricsCmd = &cobra.Command{
 }
 
 func init() {
-	metricsCmd.AddCommand(listMetricsCmd)
+	metricsCmd.AddCommand(metricsListCmd)
 }

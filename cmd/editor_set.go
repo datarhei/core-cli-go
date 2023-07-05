@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// setEditorCmd represents the metrics command
-var setEditorCmd = &cobra.Command{
+// editorSetCmd represents the metrics command
+var editorSetCmd = &cobra.Command{
 	Use:   "set [path to editor]",
 	Short: "Set an editor",
 	Long:  "Set an editor in the config. Any value in the environment variable EDITOR will be ignored.",
@@ -39,7 +39,7 @@ var setEditorCmd = &cobra.Command{
 }
 
 func init() {
-	editorCmd.AddCommand(setEditorCmd)
+	editorCmd.AddCommand(editorSetCmd)
 
 	// Here you will define your flags and configuration settings.
 

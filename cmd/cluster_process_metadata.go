@@ -4,8 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processMetadataCmd represents the metrics command
-var processMetadataCmd = &cobra.Command{
+var clusterProcessMetadataCmd = &cobra.Command{
 	Use:   "metadata",
 	Short: "Process metadata related commands",
 	Long:  "Process metadata related commands",
@@ -15,7 +14,7 @@ var processMetadataCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processMetadataCmd)
+	clusterProcessCmd.AddCommand(clusterProcessMetadataCmd)
 
 	// Here you will define your flags and configuration settings.
 

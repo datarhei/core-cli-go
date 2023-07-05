@@ -9,8 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processMetadataListCmd represents the list command
-var processMetadataListCmd = &cobra.Command{
+var clusterProcessMetadataListCmd = &cobra.Command{
 	Use:   "list [processid]",
 	Short: "List all metadata keys",
 	Long:  "List all metadata keys",
@@ -25,7 +24,7 @@ var processMetadataListCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		m, err := client.ProcessMetadata(id, "")
+		m, err := client.ClusterProcessMetadata(id, "")
 		if err != nil {
 			return err
 		}
@@ -53,5 +52,5 @@ var processMetadataListCmd = &cobra.Command{
 }
 
 func init() {
-	processMetadataCmd.AddCommand(processMetadataListCmd)
+	clusterProcessMetadataCmd.AddCommand(clusterProcessMetadataListCmd)
 }

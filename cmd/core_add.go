@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// addCoreCmd represents the add command
-var addCoreCmd = &cobra.Command{
+// coreAddCmd represents the add command
+var coreAddCmd = &cobra.Command{
 	Use:   "add [name] [host] (-u|--username) [username] (-p|--password) [password] (-o|--overwrite)",
 	Short: "Add a core",
 	Long:  `Add a core to the list of known cores and automatically selects it.`,
@@ -55,7 +55,7 @@ var addCoreCmd = &cobra.Command{
 }
 
 func init() {
-	coreCmd.AddCommand(addCoreCmd)
+	coreCmd.AddCommand(coreAddCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -65,8 +65,8 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	addCoreCmd.Flags().StringP("username", "u", "", "username for the core")
-	addCoreCmd.Flags().StringP("password", "p", "", "password for the core")
-	addCoreCmd.MarkFlagsRequiredTogether("username", "password")
-	addCoreCmd.Flags().BoolP("overwrite", "o", false, "overwrite stored core if it exists")
+	coreAddCmd.Flags().StringP("username", "u", "", "username for the core")
+	coreAddCmd.Flags().StringP("password", "p", "", "password for the core")
+	coreAddCmd.MarkFlagsRequiredTogether("username", "password")
+	coreAddCmd.Flags().BoolP("overwrite", "o", false, "overwrite stored core if it exists")
 }

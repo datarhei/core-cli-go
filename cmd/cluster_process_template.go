@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var processTemplateCmd = &cobra.Command{
+var clusterProcessTemplateCmd = &cobra.Command{
 	Use:   "template",
 	Short: "Print a template for a process config",
 	Long:  "Print a template for a process config.",
@@ -60,7 +60,7 @@ var processTemplateCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processTemplateCmd)
+	clusterProcessCmd.AddCommand(clusterProcessTemplateCmd)
 
 	// Here you will define your flags and configuration settings.
 

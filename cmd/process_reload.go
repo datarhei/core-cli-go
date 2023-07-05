@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// reloadProcessCmd represents the show command
-var reloadProcessCmd = &cobra.Command{
+// processReloadCmd represents the show command
+var processReloadCmd = &cobra.Command{
 	Use:   "reload [processid]",
 	Short: "Reload the process with the given ID",
 	Long:  "Reload the process with the given ID",
@@ -35,5 +35,5 @@ var reloadProcessCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(reloadProcessCmd)
+	processCmd.AddCommand(processReloadCmd)
 }

@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// addProcessCmd represents the add command
-var addProcessCmd = &cobra.Command{
+// processAddCmd represents the add command
+var processAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a process",
 	Long:  "Add a process to the core.",
@@ -57,7 +57,7 @@ var addProcessCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(addProcessCmd)
+	processCmd.AddCommand(processAddCmd)
 
-	addProcessCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
+	processAddCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
 }

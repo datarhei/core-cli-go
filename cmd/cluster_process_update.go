@@ -12,8 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processUpdateCmd represents the update command
-var processUpdateCmd = &cobra.Command{
+var clusterProcessUpdateCmd = &cobra.Command{
 	Use:   "update [processid]",
 	Short: "Update the process with the given ID",
 	Long:  "Update the process with the given ID. The process with the given ID will be stopped and deleted. The new process doesn't neet to have the same ID.",
@@ -55,7 +54,7 @@ var processUpdateCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		if err := client.ProcessUpdate(id, config); err != nil {
+		if err := client.ClusterProcessUpdate(id, config); err != nil {
 			return err
 		}
 
@@ -64,7 +63,7 @@ var processUpdateCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processUpdateCmd)
+	clusterProcessCmd.AddCommand(clusterProcessUpdateCmd)
 
-	processUpdateCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
+	clusterProcessUpdateCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
 }

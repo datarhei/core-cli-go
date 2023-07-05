@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// aboutCoreCmd represents the backup command
-var aboutCoreCmd = &cobra.Command{
+// coreAboutCmd represents the backup command
+var coreAboutCmd = &cobra.Command{
 	Use:   "about",
 	Short: "Show core details",
 	Long:  "Show core details.",
@@ -31,7 +31,7 @@ var aboutCoreCmd = &cobra.Command{
 }
 
 func init() {
-	coreCmd.AddCommand(aboutCoreCmd)
+	coreCmd.AddCommand(coreAboutCmd)
 
 	// Here you will define your flags and configuration settings.
 

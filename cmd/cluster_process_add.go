@@ -6,18 +6,14 @@ import (
 	"io"
 	"os"
 
-	coreclient "github.com/datarhei/core-client-go/v16"
 	"github.com/datarhei/core-client-go/v16/api"
-
 	"github.com/spf13/cobra"
 )
 
-// processUpdateCmd represents the update command
-var processUpdateCmd = &cobra.Command{
-	Use:   "update [processid]",
-	Short: "Update the process with the given ID",
-	Long:  "Update the process with the given ID. The process with the given ID will be stopped and deleted. The new process doesn't neet to have the same ID.",
-	Args:  cobra.ExactArgs(1),
+var clusterProcessAddCmd = &cobra.Command{
+	Use:   "add",
+	Short: "Add a process",
+	Long:  "Add a process to the cluster.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fromFile, _ := cmd.Flags().GetString("from-file")
 		if len(fromFile) == 0 {
@@ -46,16 +42,12 @@ var processUpdateCmd = &cobra.Command{
 			return err
 		}
 
-		pid := args[0]
-
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		id := coreclient.ParseProcessID(pid)
-
-		if err := client.ProcessUpdate(id, config); err != nil {
+		if err := client.ClusterProcessAdd(config); err != nil {
 			return err
 		}
 
@@ -64,7 +56,7 @@ var processUpdateCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processUpdateCmd)
+	clusterProcessCmd.AddCommand(clusterProcessAddCmd)
 
-	processUpdateCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
+	clusterProcessAddCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
 }

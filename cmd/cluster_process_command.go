@@ -9,8 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processCommandCmd represents the show command
-var processCommandCmd = &cobra.Command{
+var clusterProcessCommandCmd = &cobra.Command{
 	Use:   "command [processid]",
 	Short: "Show the ffmpeg command of the process with the given ID",
 	Long:  "Show the ffmpeg command of the process with the given ID",
@@ -25,12 +24,12 @@ var processCommandCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		state, err := client.ProcessState(id)
+		process, err := client.ClusterProcess(id, []string{"state"})
 		if err != nil {
 			return err
 		}
 
-		for _, e := range state.Command {
+		for _, e := range process.State.Command {
 			if strings.ContainsAny(e, " $") {
 				fmt.Printf("'%s' ", e)
 			} else {
@@ -45,5 +44,5 @@ var processCommandCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processCommandCmd)
+	clusterProcessCmd.AddCommand(clusterProcessCommandCmd)
 }

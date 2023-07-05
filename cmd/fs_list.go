@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listFSCmd represents the list command
-var listFSCmd = &cobra.Command{
+// fsListCmd represents the list command
+var fsListCmd = &cobra.Command{
 	Use:   "list [name] [pattern]? (-s|--sort) [none|name|size|lastmod] (-o|--order) [asc|desc]",
 	Short: "List files",
 	Long:  "List files on filesystem",
@@ -58,8 +58,8 @@ var listFSCmd = &cobra.Command{
 }
 
 func init() {
-	fsCmd.AddCommand(listFSCmd)
+	fsCmd.AddCommand(fsListCmd)
 
-	listFSCmd.Flags().StringP("sort", "s", "none", "Sorting criteria")
-	listFSCmd.Flags().StringP("order", "o", "asc", "Sorting direction")
+	fsListCmd.Flags().StringP("sort", "s", "none", "Sorting criteria")
+	fsListCmd.Flags().StringP("order", "o", "asc", "Sorting direction")
 }

@@ -8,8 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processMetadataShowCmd represents the show command
-var processMetadataShowCmd = &cobra.Command{
+var clusterProcessMetadataShowCmd = &cobra.Command{
 	Use:   "show [processid] [key]?",
 	Short: "Show the metadata of the process with the given ID",
 	Long:  "Show the metadata of the process with the given ID",
@@ -28,7 +27,7 @@ var processMetadataShowCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		metadata, err := client.ProcessMetadata(id, key)
+		metadata, err := client.ClusterProcessMetadata(id, key)
 		if err != nil {
 			return err
 		}
@@ -42,5 +41,5 @@ var processMetadataShowCmd = &cobra.Command{
 }
 
 func init() {
-	processMetadataCmd.AddCommand(processMetadataShowCmd)
+	clusterProcessMetadataCmd.AddCommand(clusterProcessMetadataShowCmd)
 }

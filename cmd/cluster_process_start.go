@@ -8,8 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processStartCmd represents the show command
-var processStartCmd = &cobra.Command{
+var clusterProcessStartCmd = &cobra.Command{
 	Use:   "start [processid]",
 	Short: "Start the process with the given ID",
 	Long:  "Start the process with the given ID",
@@ -24,7 +23,7 @@ var processStartCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		if err := client.ProcessCommand(id, "start"); err != nil {
+		if err := client.ClusterProcessCommand(id, "start"); err != nil {
 			return err
 		}
 
@@ -35,5 +34,5 @@ var processStartCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processStartCmd)
+	clusterProcessCmd.AddCommand(clusterProcessStartCmd)
 }

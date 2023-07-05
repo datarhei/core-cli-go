@@ -4,8 +4,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// deleteMetadataCmd represents the list command
-var deleteMetadataCmd = &cobra.Command{
+// metadataDeleteCmd represents the list command
+var metadataDeleteCmd = &cobra.Command{
 	Use:   "delete [key]",
 	Short: "Delete metadata",
 	Long:  "Delete a specific metadata key",
@@ -23,5 +23,5 @@ var deleteMetadataCmd = &cobra.Command{
 }
 
 func init() {
-	metadataCmd.AddCommand(deleteMetadataCmd)
+	metadataCmd.AddCommand(metadataDeleteCmd)
 }

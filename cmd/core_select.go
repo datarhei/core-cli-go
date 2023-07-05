@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// selectCoreCmd represents the select command
-var selectCoreCmd = &cobra.Command{
+// coreSelectCmd represents the select command
+var coreSelectCmd = &cobra.Command{
 	Use:   "select [name]",
 	Short: "Select a core for use",
 	Long:  `Select a core for use from the list of known cores.`,
@@ -35,7 +35,7 @@ var selectCoreCmd = &cobra.Command{
 }
 
 func init() {
-	coreCmd.AddCommand(selectCoreCmd)
+	coreCmd.AddCommand(coreSelectCmd)
 
 	// Here you will define your flags and configuration settings.
 

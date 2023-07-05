@@ -6,8 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processMetadataDeleteCmd represents the list command
-var processMetadataDeleteCmd = &cobra.Command{
+var clusterProcessMetadataDeleteCmd = &cobra.Command{
 	Use:   "delete [processid] [key]",
 	Short: "Delete metadata",
 	Long:  "Delete a specific metadata key",
@@ -23,10 +22,10 @@ var processMetadataDeleteCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		return client.ProcessMetadataSet(id, key, nil)
+		return client.ClusterProcessMetadataSet(id, key, nil)
 	},
 }
 
 func init() {
-	processMetadataCmd.AddCommand(processMetadataDeleteCmd)
+	clusterProcessMetadataCmd.AddCommand(clusterProcessMetadataDeleteCmd)
 }

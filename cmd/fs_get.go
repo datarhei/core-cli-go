@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// getFSCmd represents the list command
-var getFSCmd = &cobra.Command{
+// fsGetCmd represents the list command
+var fsGetCmd = &cobra.Command{
 	Use:   "get [name] [path] [(-t|--to-file) path]",
 	Short: "Download a file",
 	Long:  "Download a file with the given path from the filesystem.",
@@ -48,7 +48,7 @@ var getFSCmd = &cobra.Command{
 }
 
 func init() {
-	fsCmd.AddCommand(getFSCmd)
+	fsCmd.AddCommand(fsGetCmd)
 
-	getFSCmd.Flags().StringP("to-file", "t", "-", "Where to write the file, '-' for stdout")
+	fsGetCmd.Flags().StringP("to-file", "t", "-", "Where to write the file, '-' for stdout")
 }

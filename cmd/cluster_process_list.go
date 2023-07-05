@@ -12,11 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processListCmd represents the list command
-var processListCmd = &cobra.Command{
+var clusterProcessListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all processes",
-	Long:  "List all processes of the selected core",
+	Long:  "List all processes in the cluster",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		asRaw, _ := cmd.Flags().GetBool("raw")
 
@@ -25,7 +24,7 @@ var processListCmd = &cobra.Command{
 			return err
 		}
 
-		list, err := client.ProcessList(coreclient.ProcessListOptions{
+		list, err := client.ClusterProcessList(coreclient.ProcessListOptions{
 			Filter: []string{"state"},
 		})
 		if err != nil {
@@ -111,7 +110,7 @@ var processListCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processListCmd)
+	clusterProcessCmd.AddCommand(clusterProcessListCmd)
 
 	// Here you will define your flags and configuration settings.
 

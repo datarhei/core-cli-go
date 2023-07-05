@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// showConfigCmd represents the list command
-var showConfigCmd = &cobra.Command{
+// configShowCmd represents the list command
+var configShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show the current config",
 	Long:  "Show the current config.",
@@ -80,7 +80,7 @@ var showConfigCmd = &cobra.Command{
 }
 
 func init() {
-	configCmd.AddCommand(showConfigCmd)
+	configCmd.AddCommand(configShowCmd)
 
-	showConfigCmd.Flags().StringP("to-file", "t", "-", "Where to write the config to, '-' for stdout")
+	configShowCmd.Flags().StringP("to-file", "t", "-", "Where to write the config to, '-' for stdout")
 }

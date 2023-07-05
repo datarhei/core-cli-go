@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// editMetadataCmd represents the list command
-var editMetadataCmd = &cobra.Command{
+// metadataEditCmd represents the list command
+var metadataEditCmd = &cobra.Command{
 	Use:   "edit [key]",
 	Short: "Edit metadata",
 	Long:  "Edit a specific metadata key",
@@ -74,5 +74,5 @@ var editMetadataCmd = &cobra.Command{
 }
 
 func init() {
-	metadataCmd.AddCommand(editMetadataCmd)
+	metadataCmd.AddCommand(metadataEditCmd)
 }

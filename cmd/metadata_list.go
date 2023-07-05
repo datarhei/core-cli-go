@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listMetadataCmd represents the list command
-var listMetadataCmd = &cobra.Command{
+// metadataListCmd represents the list command
+var metadataListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all metadata keys",
 	Long:  "List all metadata keys",
@@ -46,5 +46,5 @@ var listMetadataCmd = &cobra.Command{
 }
 
 func init() {
-	metadataCmd.AddCommand(listMetadataCmd)
+	metadataCmd.AddCommand(metadataListCmd)
 }

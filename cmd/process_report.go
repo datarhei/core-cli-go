@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// reportProcessCmd represents the show command
-var reportProcessCmd = &cobra.Command{
+// processReportCmd represents the show command
+var processReportCmd = &cobra.Command{
 	Use:   "report [processid]",
 	Short: "Show the report of the process with the given ID",
 	Long:  "Show the report of the process with the given ID",
@@ -24,12 +24,12 @@ var reportProcessCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		report, err := client.ProcessReport(id)
+		process, err := client.Process(id, []string{"report"})
 		if err != nil {
 			return err
 		}
 
-		if err := writeJSON(os.Stdout, report, true); err != nil {
+		if err := writeJSON(os.Stdout, process.Report, true); err != nil {
 			return err
 		}
 
@@ -38,5 +38,5 @@ var reportProcessCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(reportProcessCmd)
+	processCmd.AddCommand(processReportCmd)
 }

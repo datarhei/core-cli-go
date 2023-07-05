@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// deleteFSCmd represents the list command
-var deleteFSCmd = &cobra.Command{
+// fsDeleteCmd represents the list command
+var fsDeleteCmd = &cobra.Command{
 	Use:   "delete [name] [path]",
 	Short: "Delete a file",
 	Long:  "Delete a file with the given path from the filesystem.",
@@ -32,5 +32,5 @@ var deleteFSCmd = &cobra.Command{
 }
 
 func init() {
-	fsCmd.AddCommand(deleteFSCmd)
+	fsCmd.AddCommand(fsDeleteCmd)
 }

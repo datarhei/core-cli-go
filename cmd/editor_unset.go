@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// unsetEditorCmd represents the metrics command
-var unsetEditorCmd = &cobra.Command{
+// editorUnsetCmd represents the metrics command
+var editorUnsetCmd = &cobra.Command{
 	Use:   "unset",
 	Short: "Unset the editor in the config",
 	Long:  "Unset the editor in the config. The value of the environment variable EDITOR will be used.",
@@ -24,7 +24,7 @@ var unsetEditorCmd = &cobra.Command{
 }
 
 func init() {
-	editorCmd.AddCommand(unsetEditorCmd)
+	editorCmd.AddCommand(editorUnsetCmd)
 
 	// Here you will define your flags and configuration settings.
 

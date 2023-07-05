@@ -11,8 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processEditCmd represents the list command
-var processEditCmd = &cobra.Command{
+var clusterProcessEditCmd = &cobra.Command{
 	Use:   "edit [processid]",
 	Short: "Edit process config",
 	Long:  "Edit the config of a process",
@@ -27,7 +26,7 @@ var processEditCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		process, err := client.Process(id, []string{"config"})
+		process, err := client.ClusterProcess(id, []string{"config"})
 		if err != nil {
 			return err
 		}
@@ -58,10 +57,10 @@ var processEditCmd = &cobra.Command{
 			return err
 		}
 
-		return client.ProcessUpdate(id, config)
+		return client.ClusterProcessUpdate(id, config)
 	},
 }
 
 func init() {
-	processCmd.AddCommand(processEditCmd)
+	clusterProcessCmd.AddCommand(clusterProcessEditCmd)
 }

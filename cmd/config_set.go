@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// setConfigCmd represents the list command
-var setConfigCmd = &cobra.Command{
+// configSetCmd represents the list command
+var configSetCmd = &cobra.Command{
 	Use:   "set [(-f|--from-file) path]",
 	Short: "Set a new config",
 	Long:  "Set a new config.",
@@ -54,7 +54,7 @@ var setConfigCmd = &cobra.Command{
 }
 
 func init() {
-	configCmd.AddCommand(setConfigCmd)
+	configCmd.AddCommand(configSetCmd)
 
-	setConfigCmd.Flags().StringP("from-file", "f", "-", "Where to read the file from, '-' for stdin")
+	configSetCmd.Flags().StringP("from-file", "f", "-", "Where to read the file from, '-' for stdin")
 }

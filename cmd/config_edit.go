@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// editConfigCmd represents the list command
-var editConfigCmd = &cobra.Command{
+// configEditCmd represents the list command
+var configEditCmd = &cobra.Command{
 	Use:   "edit",
 	Short: "Edit core config",
 	Long:  "Edit the config of the core",
@@ -58,5 +58,5 @@ var editConfigCmd = &cobra.Command{
 }
 
 func init() {
-	configCmd.AddCommand(editConfigCmd)
+	configCmd.AddCommand(configEditCmd)
 }

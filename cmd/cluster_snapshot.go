@@ -47,5 +47,5 @@ var clusterSnapshotCmd = &cobra.Command{
 func init() {
 	clusterCmd.AddCommand(clusterSnapshotCmd)
 
-	getFSCmd.Flags().StringP("to-file", "t", "-", "Where to write the file, '-' for stdout")
+	clusterSnapshotCmd.Flags().StringP("to-file", "t", "-", "Where to write the file, '-' for stdout")
 }

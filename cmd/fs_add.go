@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// addFSCmd represents the list command
-var addFSCmd = &cobra.Command{
+// fsAddCmd represents the list command
+var fsAddCmd = &cobra.Command{
 	Use:   "add [name] [path] [(-f|--from-file) path]",
 	Short: "Upload a file",
 	Long:  "Upload a file with the given path from the filesystem.",
@@ -43,7 +43,7 @@ var addFSCmd = &cobra.Command{
 }
 
 func init() {
-	fsCmd.AddCommand(addFSCmd)
+	fsCmd.AddCommand(fsAddCmd)
 
-	addFSCmd.Flags().StringP("from-file", "f", "-", "Where to read the file from, '-' for stdin")
+	fsAddCmd.Flags().StringP("from-file", "f", "-", "Where to read the file from, '-' for stdin")
 }

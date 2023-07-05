@@ -8,8 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processDeleteCmd represents the show command
-var processDeleteCmd = &cobra.Command{
+var clusterProcessDeleteCmd = &cobra.Command{
 	Use:   "delete [processid] (-r|--reference)",
 	Short: "Delete the process with the given ID",
 	Long:  "Delete the process with the given ID or reference.",
@@ -26,7 +25,7 @@ var processDeleteCmd = &cobra.Command{
 		id := coreclient.ParseProcessID(pid)
 
 		if reference {
-			list, err := client.ProcessList(coreclient.ProcessListOptions{
+			list, err := client.ClusterProcessList(coreclient.ProcessListOptions{
 				RefPattern: pid,
 			})
 			if err != nil {
@@ -35,7 +34,7 @@ var processDeleteCmd = &cobra.Command{
 
 			for _, p := range list {
 				id := coreclient.ProcessIDFromProcess(p)
-				if err := client.ProcessDelete(id); err != nil {
+				if err := client.ClusterProcessDelete(id); err != nil {
 					fmt.Printf("%s error %s\n", id, err.Error())
 				} else {
 					fmt.Printf("%s delete\n", id)
@@ -45,7 +44,7 @@ var processDeleteCmd = &cobra.Command{
 			return nil
 		}
 
-		if err := client.ProcessDelete(id); err != nil {
+		if err := client.ClusterProcessDelete(id); err != nil {
 			return err
 		}
 
@@ -56,7 +55,7 @@ var processDeleteCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processDeleteCmd)
+	clusterProcessCmd.AddCommand(clusterProcessDeleteCmd)
 
-	processDeleteCmd.Flags().BoolP("reference", "r", false, "Interpret the processid as reference and delete all processes with that reference")
+	clusterProcessDeleteCmd.Flags().BoolP("reference", "r", false, "Interpret the processid as reference and delete all processes with that reference")
 }

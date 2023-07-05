@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// listCoreCmd represents the backup command
-var listCoreCmd = &cobra.Command{
+// coreListCmd represents the backup command
+var coreListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all known cores",
 	Long:  "List all known cores.",
@@ -55,7 +55,7 @@ var listCoreCmd = &cobra.Command{
 }
 
 func init() {
-	coreCmd.AddCommand(listCoreCmd)
+	coreCmd.AddCommand(coreListCmd)
 
 	// Here you will define your flags and configuration settings.
 

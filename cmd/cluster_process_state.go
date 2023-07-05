@@ -8,11 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// processProbeCmd represents the show command
-var processProbeCmd = &cobra.Command{
-	Use:   "probe [processid]",
-	Short: "Probe the process with the given ID",
-	Long:  "Probe the process with the given ID",
+var clusterProcessStateCmd = &cobra.Command{
+	Use:   "state [processid]",
+	Short: "Show the state of the process with the given ID",
+	Long:  "Show the state of the process with the given ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pid := args[0]
@@ -24,12 +23,12 @@ var processProbeCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		probe, err := client.ProcessProbe(id)
+		process, err := client.ClusterProcess(id, []string{"state"})
 		if err != nil {
 			return err
 		}
 
-		if err := writeJSON(os.Stdout, probe, true); err != nil {
+		if err := writeJSON(os.Stdout, process.State, true); err != nil {
 			return err
 		}
 
@@ -38,5 +37,5 @@ var processProbeCmd = &cobra.Command{
 }
 
 func init() {
-	processCmd.AddCommand(processProbeCmd)
+	clusterProcessCmd.AddCommand(clusterProcessStateCmd)
 }

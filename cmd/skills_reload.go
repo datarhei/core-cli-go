@@ -4,8 +4,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// reloadSkillsCmd represents the list command
-var reloadSkillsCmd = &cobra.Command{
+// skillsReloadCmd represents the list command
+var skillsReloadCmd = &cobra.Command{
 	Use:   "reload",
 	Short: "Reload skills",
 	Long:  "Reload FFmpeg skills",
@@ -21,5 +21,5 @@ var reloadSkillsCmd = &cobra.Command{
 }
 
 func init() {
-	skillsCmd.AddCommand(reloadSkillsCmd)
+	skillsCmd.AddCommand(skillsReloadCmd)
 }
