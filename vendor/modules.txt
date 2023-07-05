@@ -1,7 +1,7 @@
 # github.com/Masterminds/semver/v3 v3.2.1
 ## explicit; go 1.18
 github.com/Masterminds/semver/v3
-# github.com/datarhei/core-client-go/v16 v16.11.1-0.20230704131504-7c9f00ca6226 => ../core-client-go
+# github.com/datarhei/core-client-go/v16 v16.11.1-0.20230705090953-f0f3585f512d
 ## explicit; go 1.18
 github.com/datarhei/core-client-go/v16
 github.com/datarhei/core-client-go/v16/api
@@ -109,4 +109,3 @@ gopkg.in/ini.v1
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# github.com/datarhei/core-client-go/v16 => ../core-client-go
