@@ -35,6 +35,9 @@ var clusterIamUserEditCmd = &cobra.Command{
 			toEdit = user
 		} else {
 			toEdit = user.Policies
+			if toEdit == nil {
+				toEdit = []api.IAMPolicy{}
+			}
 		}
 
 		data, err := json.MarshalIndent(toEdit, "", "   ")
