@@ -8,7 +8,7 @@ import (
 
 // fsAddCmd represents the list command
 var fsAddCmd = &cobra.Command{
-	Use:   "add [name] [path] [(-f|--from-file) path]",
+	Use:   "add [fsname] [path] [(-f|--from-file) path]",
 	Short: "Upload a file",
 	Long:  "Upload a file with the given path from the filesystem.",
 	Args:  cobra.ExactArgs(2),

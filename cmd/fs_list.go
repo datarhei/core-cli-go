@@ -11,7 +11,7 @@ import (
 
 // fsListCmd represents the list command
 var fsListCmd = &cobra.Command{
-	Use:   "list [name] [pattern]? (-s|--sort) [none|name|size|lastmod] (-o|--order) [asc|desc]",
+	Use:   "list [fsname] [pattern]? (-s|--sort) [none|name|size|lastmod] (-o|--order) [asc|desc]",
 	Short: "List files",
 	Long:  "List files on filesystem",
 	Args:  cobra.RangeArgs(1, 2),

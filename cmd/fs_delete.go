@@ -8,7 +8,7 @@ import (
 
 // fsDeleteCmd represents the list command
 var fsDeleteCmd = &cobra.Command{
-	Use:   "delete [name] [path]",
+	Use:   "delete [fsname] [path]",
 	Short: "Delete a file",
 	Long:  "Delete a file with the given path from the filesystem.",
 	Args:  cobra.ExactArgs(2),

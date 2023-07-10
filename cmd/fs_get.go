@@ -8,7 +8,7 @@ import (
 
 // fsGetCmd represents the list command
 var fsGetCmd = &cobra.Command{
-	Use:   "get [name] [path] [(-t|--to-file) path]",
+	Use:   "get [fsname] [path] [(-t|--to-file) path]",
 	Short: "Download a file",
 	Long:  "Download a file with the given path from the filesystem.",
 	Args:  cobra.ExactArgs(2),
