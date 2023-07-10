@@ -1,7 +1,7 @@
 # github.com/Masterminds/semver/v3 v3.2.1
 ## explicit; go 1.18
 github.com/Masterminds/semver/v3
-# github.com/datarhei/core-client-go/v16 v16.11.1-0.20230710073439-ec4a7d63c81e
+# github.com/datarhei/core-client-go/v16 v16.11.1-0.20230710075519-4279fa5464a8
 ## explicit; go 1.18
 github.com/datarhei/core-client-go/v16
 github.com/datarhei/core-client-go/v16/api

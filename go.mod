@@ -3,7 +3,7 @@ module github.com/datarhei/core-cli-go
 go 1.19
 
 require (
-	github.com/datarhei/core-client-go/v16 v16.11.1-0.20230710073439-ec4a7d63c81e
+	github.com/datarhei/core-client-go/v16 v16.11.1-0.20230710075519-4279fa5464a8
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/mattn/go-isatty v0.0.19
 	github.com/spf13/cobra v1.7.0
