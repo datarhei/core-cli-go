@@ -34,9 +34,10 @@ var clusterIamUserEditCmd = &cobra.Command{
 		if !policies {
 			toEdit = user
 		} else {
-			toEdit = user.Policies
-			if toEdit == nil {
+			if len(user.Policies) == 0 {
 				toEdit = []api.IAMPolicy{}
+			} else {
+				toEdit = user.Policies
 			}
 		}
 
