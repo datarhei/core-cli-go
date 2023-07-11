@@ -57,6 +57,12 @@ github.com/datarhei/core-client-go/v16 v16.11.1-0.20230710073439-ec4a7d63c81e h1
 github.com/datarhei/core-client-go/v16 v16.11.1-0.20230710073439-ec4a7d63c81e/go.mod h1:3eKfwhPKoW7faTn+luShRVNMqcIskvlIKjRJ7ShjyL8=
 github.com/datarhei/core-client-go/v16 v16.11.1-0.20230710075519-4279fa5464a8 h1:bplRKSS8Lb7wbwdu0dzvjzPTt0VAseEdtQ5+SiPlauA=
 github.com/datarhei/core-client-go/v16 v16.11.1-0.20230710075519-4279fa5464a8/go.mod h1:3eKfwhPKoW7faTn+luShRVNMqcIskvlIKjRJ7ShjyL8=
+github.com/datarhei/core-client-go/v16 v16.11.1-0.20230711085904-b6d7d225a1a6 h1:QZFD+X9deAa9nYyUlkcJcGSl0UGTYVL0H1MJ81hrqK8=
+github.com/datarhei/core-client-go/v16 v16.11.1-0.20230711085904-b6d7d225a1a6/go.mod h1:3eKfwhPKoW7faTn+luShRVNMqcIskvlIKjRJ7ShjyL8=
+github.com/datarhei/core-client-go/v16 v16.11.1-0.20230711090214-ba0638692324 h1:+Eu3boUO8Dm56paHM5zyh1iln0EQvSMoQOUSErLkroI=
+github.com/datarhei/core-client-go/v16 v16.11.1-0.20230711090214-ba0638692324/go.mod h1:3eKfwhPKoW7faTn+luShRVNMqcIskvlIKjRJ7ShjyL8=
+github.com/datarhei/core-client-go/v16 v16.11.1-0.20230711122943-496d55de4076 h1:SY7r9s5wjaf/GZL3Fuil0R2369vOc0Rbr3d29vsceL0=
+github.com/datarhei/core-client-go/v16 v16.11.1-0.20230711122943-496d55de4076/go.mod h1:3eKfwhPKoW7faTn+luShRVNMqcIskvlIKjRJ7ShjyL8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
