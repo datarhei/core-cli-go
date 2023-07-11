@@ -21,11 +21,9 @@ var clusterProcessShowCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pid := args[0]
 		asRaw, _ := cmd.Flags().GetBool("raw")
-		config, _ := cmd.Flags().GetBool("cfg")
-		state, _ := cmd.Flags().GetBool("state")
-		report, _ := cmd.Flags().GetBool("report")
-		metadata, _ := cmd.Flags().GetBool("metadata")
-		command, _ := cmd.Flags().GetBool("command")
+		withConfig, _ := cmd.Flags().GetBool("cfg")
+		withReport, _ := cmd.Flags().GetBool("report")
+		withMetadata, _ := cmd.Flags().GetBool("metadata")
 
 		client, err := connectSelectedCore()
 		if err != nil {
@@ -34,33 +32,24 @@ var clusterProcessShowCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		filter := []string{}
-		if config {
+		filter := []string{"state"}
+		if withConfig {
 			filter = append(filter, "config")
 		}
-		if state || command {
-			filter = append(filter, "state")
-		}
-		if report {
+		if withReport {
 			filter = append(filter, "report")
 		}
-		if metadata {
+		if withMetadata {
 			filter = append(filter, "metadata")
 		}
 
-		process, err := client.ClusterProcess(id, filter)
+		p, err := client.ClusterProcess(id, filter)
 		if err != nil {
 			return err
 		}
 
-		if command {
-			fmt.Println(strings.Join(process.State.Command, " "))
-
-			return nil
-		}
-
 		if asRaw {
-			if err := writeJSON(os.Stdout, process, true); err != nil {
+			if err := writeJSON(os.Stdout, p, true); err != nil {
 				return err
 			}
 
@@ -69,34 +58,66 @@ var clusterProcessShowCmd = &cobra.Command{
 
 		t := table.NewWriter()
 
-		t.AppendHeader(table.Row{"ID", "Reference", "State", "Memory", "CPU", "Runtime"})
+		t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime"})
 
-		runtime := process.State.Runtime
-		if process.State.State != "running" {
+		runtime := p.State.Runtime
+		if p.State.State != "running" {
 			runtime = 0
 		}
 
+		order := strings.ToUpper(p.State.Order)
+		switch order {
+		case "START":
+			order = text.FgGreen.Sprint(order)
+		case "STOP":
+			order = text.Colors{text.FgWhite, text.Faint}.Sprint(order)
+		}
+
+		state := strings.ToUpper(p.State.State)
+		switch state {
+		case "RUNNING":
+			state = text.FgGreen.Sprint(state)
+		case "FINISHED":
+			state = text.Colors{text.FgWhite, text.Faint}.Sprint(state)
+		case "FAILED":
+			state = text.FgRed.Sprint(state)
+		case "STARTING":
+			state = text.FgCyan.Sprint(state)
+		case "FINISHING":
+			state = text.FgCyan.Sprint(state)
+		case "KILLED":
+			state = text.Colors{text.FgRed, text.Faint}.Sprint(state)
+		}
+
 		t.AppendRow(table.Row{
-			process.ID,
-			process.Reference,
-			strings.ToUpper(process.State.State),
-			formatByteCountBinary(process.State.Memory),
-			fmt.Sprintf("%.1f%%", process.State.CPU),
+			p.ID,
+			p.Domain,
+			p.Reference,
+			order,
+			state,
+			formatByteCountBinary(p.State.Memory),
+			fmt.Sprintf("%.1f%%", p.State.CPU),
 			(time.Duration(runtime) * time.Second).String(),
 		})
 
 		t.SetColumnConfigs([]table.ColumnConfig{
 			{Number: 2, Align: text.AlignRight},
-			{Number: 3, Align: text.AlignRight},
 			{Number: 4, Align: text.AlignRight},
 			{Number: 5, Align: text.AlignRight},
+			{Number: 6, Align: text.AlignRight},
+			{Number: 7, Align: text.AlignRight},
+			{Number: 8, Align: text.AlignRight},
 		})
 
 		t.SetStyle(table.StyleLight)
 
 		fmt.Println(t.Render())
 
-		if len(process.State.Progress.Input) == 0 && len(process.State.Progress.Output) == 0 {
+		if p.State == nil || p.State.Progress == nil {
+			return nil
+		}
+
+		if len(p.State.Progress.Input) == 0 && len(p.State.Progress.Output) == 0 {
 			return nil
 		}
 
@@ -107,7 +128,7 @@ var clusterProcessShowCmd = &cobra.Command{
 		t.SetTitle("Inputs / Outputs")
 		t.AppendHeader(table.Row{"", "#", "ID", "Type", "URL", "Specs"}, rowConfigAutoMerge)
 
-		for i, p := range process.State.Progress.Input {
+		for i, p := range p.State.Progress.Input {
 			var specs string
 			if p.Type == "audio" {
 				specs = fmt.Sprintf("%s %s %dHz", strings.ToUpper(p.Codec), p.Layout, p.Sampling)
@@ -125,7 +146,7 @@ var clusterProcessShowCmd = &cobra.Command{
 			}, rowConfigAutoMerge)
 		}
 
-		for i, p := range process.State.Progress.Output {
+		for i, p := range p.State.Progress.Output {
 			var specs string
 			if p.Type == "audio" {
 				specs = fmt.Sprintf("%s %s %dHz", strings.ToUpper(p.Codec), p.Layout, p.Sampling)
@@ -163,8 +184,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	clusterProcessShowCmd.Flags().BoolP("cfg", "c", false, "Include the process config")
-	clusterProcessShowCmd.Flags().BoolP("state", "s", false, "Include the process state")
 	clusterProcessShowCmd.Flags().BoolP("report", "r", false, "Include the process config")
 	clusterProcessShowCmd.Flags().BoolP("metadata", "m", false, "Include the process config")
-	clusterProcessShowCmd.Flags().Bool("command", false, "Show the process command")
 }

@@ -55,9 +55,14 @@ var clusterProcessListCmd = &cobra.Command{
 			return nil
 		}
 
+		pmap, err := client.ClusterDBProcessMap()
+		if err != nil {
+			return err
+		}
+
 		t := table.NewWriter()
 
-		t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime"})
+		t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime", "Node", "Last Log"})
 
 		for _, p := range list {
 			runtime := p.State.Runtime
@@ -89,6 +94,13 @@ var clusterProcessListCmd = &cobra.Command{
 				state = text.Colors{text.FgRed, text.Faint}.Sprint(state)
 			}
 
+			nodeid := pmap[coreclient.NewProcessID(p.ID, p.Domain).String()]
+
+			lastlog := p.State.LastLog
+			if len(lastlog) > 58 {
+				lastlog = lastlog[:55] + "..."
+			}
+
 			t.AppendRow(table.Row{
 				p.ID,
 				p.Domain,
@@ -98,6 +110,8 @@ var clusterProcessListCmd = &cobra.Command{
 				formatByteCountBinary(p.State.Memory),
 				fmt.Sprintf("%.1f%%", p.State.CPU),
 				(time.Duration(runtime) * time.Second).String(),
+				nodeid,
+				lastlog,
 			})
 		}
 
