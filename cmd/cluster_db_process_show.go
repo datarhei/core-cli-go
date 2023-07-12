@@ -4,6 +4,7 @@ import (
 	"os"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
+	coreclientapi "github.com/datarhei/core-client-go/v16/api"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +14,7 @@ var clusterDbProcessShowCmd = &cobra.Command{
 	Long:  "Show a specific process in the cluster DB",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		asRaw, _ := cmd.Flags().GetBool("raw")
 		pid := args[0]
 
 		client, err := connectSelectedCore()
@@ -22,14 +24,25 @@ var clusterDbProcessShowCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		process, err := client.ClusterDBProcess(id)
+		p, err := client.ClusterDBProcess(id)
 		if err != nil {
 			return err
 		}
 
-		if err := writeJSON(os.Stdout, process, true); err != nil {
+		if asRaw {
+			if err := writeJSON(os.Stdout, p, true); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		pmap, err := client.ClusterDBProcessMap()
+		if err != nil {
 			return err
 		}
+
+		dbProcessTable([]coreclientapi.Process{p}, pmap)
 
 		return nil
 	},

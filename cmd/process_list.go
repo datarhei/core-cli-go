@@ -1,14 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
 )
 
@@ -56,87 +52,18 @@ var processListCmd = &cobra.Command{
 			return nil
 		}
 
-		t := table.NewWriter()
-
-		t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime", "Node", "Last Log"})
-
-		for _, p := range list {
-			runtime := p.State.Runtime
-			if p.State.State != "running" {
-				runtime = 0
-
-				if p.State.Reconnect > 0 {
-					runtime = -p.State.Reconnect
-				}
-			}
-
-			order := strings.ToUpper(p.State.Order)
-			switch order {
-			case "START":
-				order = text.FgGreen.Sprint(order)
-			case "STOP":
-				order = text.Colors{text.FgWhite, text.Faint}.Sprint(order)
-			}
-
-			state := strings.ToUpper(p.State.State)
-			switch state {
-			case "RUNNING":
-				state = text.FgGreen.Sprint(state)
-			case "FINISHED":
-				state = text.Colors{text.FgWhite, text.Faint}.Sprint(state)
-			case "FAILED":
-				state = text.FgRed.Sprint(state)
-			case "STARTING":
-				state = text.FgCyan.Sprint(state)
-			case "FINISHING":
-				state = text.FgCyan.Sprint(state)
-			case "KILLED":
-				state = text.Colors{text.FgRed, text.Faint}.Sprint(state)
-			}
-
-			nodeid := ""
-			if about, err := client.About(true); err == nil {
-				nodeid = about.ID
-			}
-
-			lastlog := p.State.LastLog
-			if len(lastlog) > 58 {
-				lastlog = lastlog[:55] + "..."
-			}
-
-			t.AppendRow(table.Row{
-				p.ID,
-				p.Domain,
-				p.Reference,
-				order,
-				state,
-				formatByteCountBinary(p.State.Memory),
-				fmt.Sprintf("%.1f%%", p.State.CPU),
-				(time.Duration(runtime) * time.Second).String(),
-				nodeid,
-				lastlog,
-			})
+		nodeid := ""
+		if about, err := client.About(true); err == nil {
+			nodeid = about.ID
 		}
 
-		t.SetColumnConfigs([]table.ColumnConfig{
-			{Number: 2, Align: text.AlignRight},
-			{Number: 4, Align: text.AlignRight},
-			{Number: 5, Align: text.AlignRight},
-			{Number: 6, Align: text.AlignRight},
-			{Number: 7, Align: text.AlignRight},
-			{Number: 8, Align: text.AlignRight},
-		})
+		pmap := map[string]string{}
 
-		t.SortBy([]table.SortBy{
-			{Number: 2, Mode: table.Asc},
-			{Number: 1, Mode: table.Asc},
-			{Number: 4, Mode: table.Asc},
-			{Number: 6, Mode: table.Dsc},
-		})
+		for _, p := range list {
+			pmap[coreclient.NewProcessID(p.ID, p.Domain).String()] = nodeid
+		}
 
-		t.SetStyle(table.StyleLight)
-
-		fmt.Println(t.Render())
+		processTable(list, pmap)
 
 		return nil
 	},

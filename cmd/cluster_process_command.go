@@ -29,6 +29,10 @@ var clusterProcessCommandCmd = &cobra.Command{
 			return err
 		}
 
+		if len(process.State.Command) == 0 {
+			return fmt.Errorf("the command is not available")
+		}
+
 		for _, e := range process.State.Command {
 			if strings.ContainsAny(e, " $") {
 				fmt.Printf("'%s' ", e)

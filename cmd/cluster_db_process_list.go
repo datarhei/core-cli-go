@@ -11,6 +11,8 @@ var clusterDbProcessListCmd = &cobra.Command{
 	Short: "List all processes",
 	Long:  "List all processes in the cluster DB",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		asRaw, _ := cmd.Flags().GetBool("raw")
+
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
@@ -21,9 +23,20 @@ var clusterDbProcessListCmd = &cobra.Command{
 			return err
 		}
 
-		if err := writeJSON(os.Stdout, list, true); err != nil {
+		if asRaw {
+			if err := writeJSON(os.Stdout, list, true); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		pmap, err := client.ClusterDBProcessMap()
+		if err != nil {
 			return err
 		}
+
+		dbProcessTable(list, pmap)
 
 		return nil
 	},

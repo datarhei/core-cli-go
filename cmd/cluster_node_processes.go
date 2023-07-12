@@ -14,6 +14,7 @@ var clusterNodeProcessesCmd = &cobra.Command{
 	Long:  "Show the processes on the node with the given id",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		asRaw, _ := cmd.Flags().GetBool("raw")
 		id := args[0]
 
 		client, err := connectSelectedCore()
@@ -30,7 +31,7 @@ var clusterNodeProcessesCmd = &cobra.Command{
 		ownerpattern, _ := cmd.Flags().GetString("ownerpattern")
 		domainpattern, _ := cmd.Flags().GetString("domainpattern")
 
-		processes, err := client.ClusterNodeProcessList(id, coreclient.ProcessListOptions{
+		list, err := client.ClusterNodeProcessList(id, coreclient.ProcessListOptions{
 			ID:            strings.Split(ids, ","),
 			Filter:        strings.Split(filter, ","),
 			Domain:        domain,
@@ -44,9 +45,20 @@ var clusterNodeProcessesCmd = &cobra.Command{
 			return err
 		}
 
-		if err := writeJSON(os.Stdout, processes, true); err != nil {
+		if asRaw {
+			if err := writeJSON(os.Stdout, list, true); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		pmap, err := client.ClusterDBProcessMap()
+		if err != nil {
 			return err
 		}
+
+		processTable(list, pmap)
 
 		return nil
 	},
@@ -55,6 +67,7 @@ var clusterNodeProcessesCmd = &cobra.Command{
 func init() {
 	clusterNodeCmd.AddCommand(clusterNodeProcessesCmd)
 
+	clusterNodeProcessesCmd.Flags().Bool("raw", false, "Display raw result from the API as JSON")
 	clusterNodeProcessesCmd.Flags().String("id", "", "A comma-separated list of process IDs")
 	clusterNodeProcessesCmd.Flags().String("filter", "state", "A comma-separated list of filters per process: config, state, report, metadata")
 	clusterNodeProcessesCmd.Flags().String("domain", "", "The domain to act upon")

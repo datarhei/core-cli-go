@@ -9,8 +9,14 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
+	"time"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
+	coreclientapi "github.com/datarhei/core-client-go/v16/api"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
+
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/viper"
 	"github.com/tidwall/pretty"
@@ -325,4 +331,207 @@ func formatByteCountBinary(b uint64) string {
 	}
 
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+func processTable(list []coreclientapi.Process, processMap map[string]string) {
+	t := table.NewWriter()
+
+	t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime", "Node", "Last Log"})
+
+	for _, p := range list {
+		runtime := p.State.Runtime
+		if p.State.State != "running" {
+			runtime = 0
+
+			if p.State.Reconnect > 0 {
+				runtime = -p.State.Reconnect
+			}
+		}
+
+		order := strings.ToUpper(p.State.Order)
+		switch order {
+		case "START":
+			order = text.FgGreen.Sprint(order)
+		case "STOP":
+			order = text.Colors{text.FgWhite, text.Faint}.Sprint(order)
+		}
+
+		state := strings.ToUpper(p.State.State)
+		switch state {
+		case "RUNNING":
+			state = text.FgGreen.Sprint(state)
+		case "FINISHED":
+			state = text.Colors{text.FgWhite, text.Faint}.Sprint(state)
+		case "FAILED":
+			state = text.FgRed.Sprint(state)
+		case "STARTING":
+			state = text.FgCyan.Sprint(state)
+		case "FINISHING":
+			state = text.FgCyan.Sprint(state)
+		case "KILLED":
+			state = text.Colors{text.FgRed, text.Faint}.Sprint(state)
+		}
+
+		nodeid := processMap[coreclient.NewProcessID(p.ID, p.Domain).String()]
+
+		lastlog := p.State.LastLog
+		if len(lastlog) > 58 {
+			lastlog = lastlog[:55] + "..."
+		}
+
+		t.AppendRow(table.Row{
+			p.ID,
+			p.Domain,
+			p.Reference,
+			order,
+			state,
+			formatByteCountBinary(p.State.Resources.Memory.Current),
+			fmt.Sprintf("%.1f%%", p.State.Resources.CPU.Current),
+			(time.Duration(runtime) * time.Second).String(),
+			nodeid,
+			lastlog,
+		})
+	}
+
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Number: 2, Align: text.AlignRight},
+		{Number: 4, Align: text.AlignRight},
+		{Number: 5, Align: text.AlignRight},
+		{Number: 6, Align: text.AlignRight},
+		{Number: 7, Align: text.AlignRight},
+		{Number: 8, Align: text.AlignRight},
+	})
+
+	t.SortBy([]table.SortBy{
+		{Number: 2, Mode: table.Asc},
+		{Number: 1, Mode: table.Asc},
+		{Number: 4, Mode: table.Asc},
+		{Number: 6, Mode: table.Dsc},
+	})
+
+	t.SetStyle(table.StyleLight)
+
+	fmt.Println(t.Render())
+}
+
+func dbProcessTable(list []coreclientapi.Process, processMap map[string]string) {
+	t := table.NewWriter()
+
+	t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory LMT", "CPU LMT", "Node", "Error"})
+
+	for _, p := range list {
+		order := strings.ToUpper(p.State.Order)
+		switch order {
+		case "START":
+			order = text.FgGreen.Sprint(order)
+		case "STOP":
+			order = text.Colors{text.FgWhite, text.Faint}.Sprint(order)
+		}
+
+		state := "DEPLOYED"
+		if p.State.State == "failed" {
+			state = "FAILED"
+		}
+
+		switch state {
+		case "DEPLOYED":
+			state = text.FgGreen.Sprint(state)
+		default:
+			state = text.FgRed.Sprint(state)
+		}
+
+		nodeid := processMap[coreclient.NewProcessID(p.ID, p.Domain).String()]
+
+		lastlog := p.State.LastLog
+		if len(lastlog) > 58 {
+			lastlog = lastlog[:55] + "..."
+		}
+
+		t.AppendRow(table.Row{
+			p.ID,
+			p.Domain,
+			p.Reference,
+			order,
+			state,
+			formatByteCountBinary(p.State.Resources.Memory.Limit),
+			fmt.Sprintf("%.1f%%", p.State.Resources.CPU.Limit),
+			nodeid,
+			lastlog,
+		})
+	}
+
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Number: 2, Align: text.AlignRight},
+		{Number: 4, Align: text.AlignRight},
+		{Number: 5, Align: text.AlignRight},
+		{Number: 6, Align: text.AlignRight},
+		{Number: 7, Align: text.AlignRight},
+	})
+
+	t.SortBy([]table.SortBy{
+		{Number: 2, Mode: table.Asc},
+		{Number: 1, Mode: table.Asc},
+		{Number: 4, Mode: table.Asc},
+	})
+
+	t.SetStyle(table.StyleLight)
+
+	fmt.Println(t.Render())
+}
+
+func processIO(p coreclientapi.Process) {
+	if p.State == nil || p.State.Progress == nil {
+		return
+	}
+
+	if len(p.State.Progress.Input) == 0 && len(p.State.Progress.Output) == 0 {
+		return
+	}
+
+	t := table.NewWriter()
+
+	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
+
+	t.SetTitle("Inputs / Outputs")
+	t.AppendHeader(table.Row{"", "#", "ID", "Type", "URL", "Specs"}, rowConfigAutoMerge)
+
+	for i, p := range p.State.Progress.Input {
+		var specs string
+		if p.Type == "audio" {
+			specs = fmt.Sprintf("%s %s %dHz", strings.ToUpper(p.Codec), p.Layout, p.Sampling)
+		} else {
+			specs = fmt.Sprintf("%s %dx%d", strings.ToUpper(p.Codec), p.Width, p.Height)
+		}
+
+		t.AppendRow(table.Row{
+			"input",
+			i,
+			p.ID,
+			strings.ToUpper(p.Type),
+			p.Address,
+			specs,
+		}, rowConfigAutoMerge)
+	}
+
+	for i, p := range p.State.Progress.Output {
+		var specs string
+		if p.Type == "audio" {
+			specs = fmt.Sprintf("%s %s %dHz", strings.ToUpper(p.Codec), p.Layout, p.Sampling)
+		} else {
+			specs = fmt.Sprintf("%s %dx%d", strings.ToUpper(p.Codec), p.Width, p.Height)
+		}
+
+		t.AppendRow(table.Row{
+			"output",
+			i,
+			p.ID,
+			strings.ToUpper(p.Type),
+			p.Address,
+			specs,
+		}, rowConfigAutoMerge)
+	}
+
+	t.SetStyle(table.StyleLight)
+
+	fmt.Println(t.Render())
 }
