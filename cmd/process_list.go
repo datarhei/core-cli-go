@@ -58,12 +58,16 @@ var processListCmd = &cobra.Command{
 
 		t := table.NewWriter()
 
-		t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime"})
+		t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime", "Node", "Last Log"})
 
 		for _, p := range list {
 			runtime := p.State.Runtime
 			if p.State.State != "running" {
 				runtime = 0
+
+				if p.State.Reconnect > 0 {
+					runtime = -p.State.Reconnect
+				}
 			}
 
 			order := strings.ToUpper(p.State.Order)
@@ -90,6 +94,16 @@ var processListCmd = &cobra.Command{
 				state = text.Colors{text.FgRed, text.Faint}.Sprint(state)
 			}
 
+			nodeid := ""
+			if about, err := client.About(true); err == nil {
+				nodeid = about.ID
+			}
+
+			lastlog := p.State.LastLog
+			if len(lastlog) > 58 {
+				lastlog = lastlog[:55] + "..."
+			}
+
 			t.AppendRow(table.Row{
 				p.ID,
 				p.Domain,
@@ -99,6 +113,8 @@ var processListCmd = &cobra.Command{
 				formatByteCountBinary(p.State.Memory),
 				fmt.Sprintf("%.1f%%", p.State.CPU),
 				(time.Duration(runtime) * time.Second).String(),
+				nodeid,
+				lastlog,
 			})
 		}
 

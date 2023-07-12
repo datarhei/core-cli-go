@@ -68,6 +68,10 @@ var clusterProcessListCmd = &cobra.Command{
 			runtime := p.State.Runtime
 			if p.State.State != "running" {
 				runtime = 0
+
+				if p.State.Reconnect > 0 {
+					runtime = -p.State.Reconnect
+				}
 			}
 
 			order := strings.ToUpper(p.State.Order)
