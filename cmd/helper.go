@@ -373,6 +373,18 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 		}
 
 		nodeid := processMap[coreclient.NewProcessID(p.ID, p.Domain).String()]
+		if nodeid != p.CoreID {
+			nodeid = "(" + nodeid + ")"
+
+			if len(p.CoreID) != 0 {
+				nodeid = p.CoreID + " " + nodeid
+			}
+		}
+
+		cpu := fmt.Sprintf("%.1f%%", p.State.Resources.CPU.Current)
+		if p.State.Resources.CPU.IsThrottling {
+			cpu = "* " + cpu
+		}
 
 		lastlog := p.State.LastLog
 		if len(lastlog) > 58 {

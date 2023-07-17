@@ -52,15 +52,10 @@ var processListCmd = &cobra.Command{
 			return nil
 		}
 
-		nodeid := ""
-		if about, err := client.About(true); err == nil {
-			nodeid = about.ID
-		}
-
 		pmap := map[string]string{}
 
 		for _, p := range list {
-			pmap[coreclient.NewProcessID(p.ID, p.Domain).String()] = nodeid
+			pmap[coreclient.NewProcessID(p.ID, p.Domain).String()] = p.CoreID
 		}
 
 		processTable(list, pmap)
