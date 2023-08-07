@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/url"
 	"os"
 	"os/exec"
@@ -338,6 +339,9 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 
 	t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime", "Node", "Last Log"})
 
+	stateCount := map[string]uint64{}
+	deployCount := map[string]uint64{}
+
 	for _, p := range list {
 		runtime := p.State.Runtime
 		if p.State.State != "running" {
@@ -372,13 +376,22 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 			state = text.Colors{text.FgRed, text.Faint}.Sprint(state)
 		}
 
+		stateCount[state]++
+
 		nodeid := processMap[coreclient.NewProcessID(p.ID, p.Domain).String()]
 		if nodeid != p.CoreID {
 			nodeid = "(" + nodeid + ")"
 
 			if len(p.CoreID) != 0 {
 				nodeid = p.CoreID + " " + nodeid
+				nodeid = text.FgYellow.Sprint(nodeid)
+				deployCount[text.FgYellow.Sprint("MISDEPLOYED")]++
+			} else {
+				nodeid = text.FgRed.Sprint(nodeid)
+				deployCount[text.FgRed.Sprint("UNDEPLOYED")]++
 			}
+		} else {
+			deployCount[text.FgGreen.Sprint("DEPLOYED")]++
 		}
 
 		cpu := fmt.Sprintf("%.1f%%", p.State.Resources.CPU.Current)
@@ -398,15 +411,16 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 			order,
 			state,
 			formatByteCountBinary(p.State.Resources.Memory.Current),
-			fmt.Sprintf("%.1f%%", p.State.Resources.CPU.Current),
+			cpu,
 			(time.Duration(runtime) * time.Second).String(),
 			nodeid,
 			lastlog,
 		})
 	}
 
+	t.SetAutoIndex(true)
+
 	t.SetColumnConfigs([]table.ColumnConfig{
-		{Number: 2, Align: text.AlignRight},
 		{Number: 4, Align: text.AlignRight},
 		{Number: 5, Align: text.AlignRight},
 		{Number: 6, Align: text.AlignRight},
@@ -419,6 +433,50 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 		{Number: 1, Mode: table.Asc},
 		{Number: 4, Mode: table.Asc},
 		{Number: 6, Mode: table.Dsc},
+	})
+
+	t.SetStyle(table.StyleLight)
+
+	fmt.Println(t.Render())
+
+	t = table.NewWriter()
+
+	t.AppendHeader(table.Row{"State", "Count"})
+
+	sum := uint64(0)
+	for state, count := range stateCount {
+		t.AppendRow(table.Row{
+			state,
+			count,
+		})
+		sum += count
+	}
+
+	t.AppendFooter(table.Row{
+		"",
+		sum,
+	})
+
+	t.SetStyle(table.StyleLight)
+
+	fmt.Println(t.Render())
+
+	t = table.NewWriter()
+
+	t.AppendHeader(table.Row{"Deployment", "Count"})
+
+	sum = uint64(0)
+	for state, count := range deployCount {
+		t.AppendRow(table.Row{
+			state,
+			count,
+		})
+		sum += count
+	}
+
+	t.AppendFooter(table.Row{
+		"",
+		sum,
 	})
 
 	t.SetStyle(table.StyleLight)
@@ -546,4 +604,39 @@ func processIO(p coreclientapi.Process) {
 	t.SetStyle(table.StyleLight)
 
 	fmt.Println(t.Render())
+}
+
+const (
+	CharsetLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	CharsetNumbers = "1234567890"
+	CharsetSymbols = "#@+*%&/<>[]()=?!$.,:;-_"
+
+	CharsetAll = CharsetLetters + CharsetNumbers + CharsetSymbols
+)
+
+var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func StringWithCharset(length int, charset string) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+
+	return string(b)
+}
+
+func StringLetters(length int) string {
+	return StringWithCharset(length, CharsetLetters)
+}
+
+func StringNumbers(length int) string {
+	return StringWithCharset(length, CharsetNumbers)
+}
+
+func StringAlphanumeric(length int) string {
+	return StringWithCharset(length, CharsetLetters+CharsetNumbers)
+}
+
+func String(length int) string {
+	return StringWithCharset(length, CharsetAll)
 }

@@ -1,6 +1,7 @@
 package processes
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	coreclient "github.com/datarhei/core-client-go/v16"
 	coreclientapi "github.com/datarhei/core-client-go/v16/api"
 	"github.com/evertras/bubble-table/table"
+	"github.com/tidwall/pretty"
 )
 
 type Model struct {
@@ -65,7 +67,36 @@ func (m Model) View() string {
 		return "Initializing ..."
 	}
 
-	return m.table.View()
+	selected := ""
+	if data := m.table.HighlightedRow().Data; data != nil {
+		selected = data[columnKeyID].(string)
+	}
+
+	table := m.table.View()
+
+	for _, p := range m.processes {
+		if p.ID != selected {
+			continue
+		}
+
+		data, err := json.MarshalIndent(&p, "", "   ")
+		if err == nil {
+			data = pretty.PrettyOptions(data, &pretty.Options{
+				Width:    pretty.DefaultOptions.Width,
+				Prefix:   pretty.DefaultOptions.Prefix,
+				Indent:   pretty.DefaultOptions.Indent,
+				SortKeys: true,
+			})
+
+			data = pretty.Color(data, nil)
+
+			table += "\n" + string(data)
+		}
+
+		break
+	}
+
+	return table
 }
 
 const (
@@ -135,15 +166,14 @@ func (m *Model) updateTable() {
 		}
 
 		rows = append(rows, table.NewRow(table.RowData{
-			columnKeyID:        p.ID,
-			columnKeyDomain:    p.Domain,
-			columnKeyReference: p.Reference,
-			columnKeyOrder:     order,
-			columnKeyState:     state,
-			columnKeyCPU:       cpu,
-			columnKeyMemory:    formatByteCountBinary(p.State.Resources.Memory.Current),
-			columnKeyRuntime:   time.Duration(runtime) * time.Second,
-			columnKeyNodeID:    nodeid,
+			columnKeyID:      p.ID,
+			columnKeyDomain:  p.Domain,
+			columnKeyOrder:   order,
+			columnKeyState:   state,
+			columnKeyCPU:     cpu,
+			columnKeyMemory:  formatByteCountBinary(p.State.Resources.Memory.Current),
+			columnKeyRuntime: time.Duration(runtime) * time.Second,
+			columnKeyNodeID:  nodeid,
 		}))
 	}
 
@@ -191,13 +221,12 @@ func New(client coreclient.RestClient) Model {
 	m.table = table.New([]table.Column{
 		table.NewFlexColumn(columnKeyID, "ID", 0),
 		table.NewFlexColumn(columnKeyDomain, "Domain", 0),
-		table.NewFlexColumn(columnKeyReference, "Reference", 0),
-		table.NewFlexColumn(columnKeyOrder, "Order", 0),
-		table.NewFlexColumn(columnKeyState, "State", 0),
-		table.NewFlexColumn(columnKeyRuntime, "Runtime", 0),
+		table.NewColumn(columnKeyOrder, "Order", 6),
+		table.NewColumn(columnKeyState, "State", 9),
+		table.NewColumn(columnKeyRuntime, "Runtime", 12),
 		table.NewFlexColumn(columnKeyNodeID, "Node", 0),
-		table.NewFlexColumn(columnKeyCPU, "CPU", 0),
-		table.NewFlexColumn(columnKeyMemory, "Memory", 0),
+		table.NewColumn(columnKeyCPU, "CPU", 7),
+		table.NewColumn(columnKeyMemory, "Memory", 10),
 	}).WithRows([]table.Row{}).
 		Focused(true).
 		WithBaseStyle(lipgloss.NewStyle().

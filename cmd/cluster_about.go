@@ -111,6 +111,10 @@ var clusterAboutCmd = &cobra.Command{
 			colors.Sprint(about.Raft.State),
 		})
 
+		t.SetColumnConfigs([]table.ColumnConfig{
+			{Number: 2, Align: text.AlignRight},
+		})
+
 		t.SetStyle(table.StyleLight)
 
 		fmt.Println(t.Render())

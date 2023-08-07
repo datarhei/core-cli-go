@@ -11,7 +11,7 @@ import (
 
 // fsListCmd represents the list command
 var fsListCmd = &cobra.Command{
-	Use:   "list [fsname] [pattern]? (-s|--sort) [none|name|size|lastmod] (-o|--order) [asc|desc]",
+	Use:   "list [fsname] [pattern]? (-s|--sort) [none|name|size|lastmod] (-o|--order) [asc|desc] (-t|--target) [url with %%s]",
 	Short: "List files",
 	Long:  "List files on filesystem",
 	Args:  cobra.RangeArgs(1, 2),
@@ -24,6 +24,8 @@ var fsListCmd = &cobra.Command{
 
 		sort, _ := cmd.Flags().GetString("sort")
 		order, _ := cmd.Flags().GetString("order")
+		target, _ := cmd.Flags().GetString("target")
+		random, _ := cmd.Flags().GetBool("random")
 
 		client, err := connectSelectedCore()
 		if err != nil {
@@ -33,6 +35,18 @@ var fsListCmd = &cobra.Command{
 		list, err := client.FilesystemList(name, pattern, sort, order)
 		if err != nil {
 			return err
+		}
+
+		if len(target) != 0 {
+			for _, f := range list {
+				if random {
+					fmt.Printf(target+"\n", "/"+StringAlphanumeric(12))
+				} else {
+					fmt.Printf(target+"\n", f.Name)
+				}
+			}
+
+			return nil
 		}
 
 		t := table.NewWriter()
@@ -62,4 +76,6 @@ func init() {
 
 	fsListCmd.Flags().StringP("sort", "s", "none", "Sorting criteria")
 	fsListCmd.Flags().StringP("order", "o", "asc", "Sorting direction")
+	fsListCmd.Flags().StringP("target", "t", "", "Create vegeta targets from listed files")
+	fsListCmd.Flags().BoolP("random", "r", false, "Create vegeta targets from listed files with random names, works only together with -target")
 }

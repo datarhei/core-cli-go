@@ -1,12 +1,15 @@
 package nodes
 
 import (
+	"encoding/json"
+
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/datarhei/core-cli-go/ui/messages"
 	coreclient "github.com/datarhei/core-client-go/v16"
 	"github.com/evertras/bubble-table/table"
+	"github.com/tidwall/pretty"
 )
 
 type Model struct {
@@ -49,7 +52,36 @@ func (m Model) View() string {
 		return "Initializing ..."
 	}
 
-	return m.table.View()
+	selected := ""
+	if data := m.table.HighlightedRow().Data; data != nil {
+		selected = data[columnKeyID].(string)
+	}
+
+	table := m.table.View()
+
+	for _, n := range m.nodes {
+		if n.ID != selected {
+			continue
+		}
+
+		data, err := json.MarshalIndent(&n, "", "   ")
+		if err == nil {
+			data = pretty.PrettyOptions(data, &pretty.Options{
+				Width:    pretty.DefaultOptions.Width,
+				Prefix:   pretty.DefaultOptions.Prefix,
+				Indent:   pretty.DefaultOptions.Indent,
+				SortKeys: true,
+			})
+
+			data = pretty.Color(data, nil)
+
+			table += "\n" + string(data)
+		}
+
+		break
+	}
+
+	return table
 }
 
 const (
@@ -98,14 +130,14 @@ func New(client coreclient.RestClient) Model {
 	}
 
 	m.table = table.New([]table.Column{
-		table.NewFlexColumn(columnKeyID, "ID", 1),
+		table.NewFlexColumn(columnKeyID, "ID", 2),
 		table.NewFlexColumn(columnKeyName, "Name", 1),
-		table.NewFlexColumn(columnKeyVersion, "Version", 1),
-		table.NewFlexColumn(columnKeyUptime, "Uptime", 1),
-		table.NewFlexColumn(columnKeyLastContact, "Last Contact", 1),
-		table.NewFlexColumn(columnKeyStatus, "Status", 1),
-		table.NewFlexColumn(columnKeyCPU, "CPU", 1),
-		table.NewFlexColumn(columnKeyMemory, "Memory", 1),
+		table.NewColumn(columnKeyVersion, "Version", 8),
+		table.NewColumn(columnKeyUptime, "Uptime", 12),
+		table.NewColumn(columnKeyLastContact, "Last Contact", 12),
+		table.NewColumn(columnKeyStatus, "Status", 10),
+		table.NewColumn(columnKeyCPU, "CPU", 23),
+		table.NewColumn(columnKeyMemory, "Memory", 23),
 	}).WithRows([]table.Row{}).
 		Focused(true).
 		WithBaseStyle(lipgloss.NewStyle().
