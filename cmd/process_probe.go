@@ -1,30 +1,54 @@
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
+	"github.com/datarhei/core-client-go/v16/api"
 
 	"github.com/spf13/cobra"
 )
 
 // processProbeCmd represents the show command
 var processProbeCmd = &cobra.Command{
-	Use:   "probe [processid]",
+	Use:   "probe [processid]?",
 	Short: "Probe the process with the given ID",
 	Long:  "Probe the process with the given ID",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		pid := args[0]
-
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		id := coreclient.ParseProcessID(pid)
+		var probe api.Probe
 
-		probe, err := client.ProcessProbe(id)
+		if len(args) == 1 {
+			pid := args[0]
+
+			probe, err = probeFromID(client, pid)
+		} else {
+			fromFile, _ := cmd.Flags().GetString("from-file")
+			if len(fromFile) == 0 {
+				return fmt.Errorf("no process configuration file provided")
+			}
+
+			reader := os.Stdin
+
+			if fromFile != "-" {
+				if file, err := os.Open(fromFile); err != nil {
+					return err
+				} else {
+					reader = file
+				}
+			}
+
+			probe, err = probeFromConfig(client, reader)
+		}
+
 		if err != nil {
 			return err
 		}
@@ -37,6 +61,29 @@ var processProbeCmd = &cobra.Command{
 	},
 }
 
+func probeFromID(client coreclient.RestClient, pid string) (api.Probe, error) {
+	id := coreclient.ParseProcessID(pid)
+
+	return client.ProcessProbe(id)
+}
+
+func probeFromConfig(client coreclient.RestClient, r io.Reader) (api.Probe, error) {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return api.Probe{}, err
+	}
+
+	config := api.ProcessConfig{}
+
+	if err := json.Unmarshal(data, &config); err != nil {
+		return api.Probe{}, err
+	}
+
+	return client.ProcessProbeConfig(config)
+}
+
 func init() {
 	processCmd.AddCommand(processProbeCmd)
+
+	processProbeCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
 }

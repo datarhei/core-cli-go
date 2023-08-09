@@ -48,7 +48,7 @@ func (r *restclient) SessionToken(name string, req []api.SessionTokenRequest) ([
 	e := json.NewEncoder(&buf)
 	e.Encode(req)
 
-	data, err := r.call("PUT", "/session/token/"+url.PathEscape(name), nil, nil, "application/json", &buf)
+	data, err := r.call("PUT", "/v3/session/token/"+url.PathEscape(name), nil, nil, "application/json", &buf)
 	if err != nil {
 		return tokens, err
 	}
