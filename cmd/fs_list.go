@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -49,6 +50,8 @@ var fsListCmd = &cobra.Command{
 			return nil
 		}
 
+		totalSize := uint64(0)
+
 		t := table.NewWriter()
 
 		t.AppendHeader(table.Row{"Name", "Size", "Last Modification"})
@@ -56,7 +59,13 @@ var fsListCmd = &cobra.Command{
 		for _, f := range list {
 			lastMod := time.Unix(f.LastMod, 0)
 			t.AppendRow(table.Row{f.Name, formatByteCountBinary(uint64(f.Size)), lastMod.Format("2006-01-02 15:04:05")})
+			totalSize += uint64(f.Size)
 		}
+
+		t.AppendFooter(table.Row{
+			strconv.Itoa(len(list)),
+			formatByteCountBinary(uint64(totalSize)),
+		})
 
 		t.SetColumnConfigs([]table.ColumnConfig{
 			{Number: 2, Align: text.AlignRight},
