@@ -181,7 +181,12 @@ func (c *clusterProcessCollector) Collect(ch chan<- prometheus.Metric) {
 	states := map[string]uint64{}
 
 	for _, p := range processes {
-		states[p.State.State]++
+		state := "FINISHED"
+		if p.State != nil {
+			state = p.State.State
+		}
+
+		states[state]++
 	}
 
 	for state, value := range states {
