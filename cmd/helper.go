@@ -457,6 +457,10 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 		sum,
 	})
 
+	t.SortBy([]table.SortBy{
+		{Number: 1, Mode: table.Asc},
+	})
+
 	t.SetStyle(table.StyleLight)
 
 	fmt.Println(t.Render())
