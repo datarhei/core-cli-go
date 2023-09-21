@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strconv"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
@@ -25,12 +26,16 @@ var processTestDeleteCmd = &cobra.Command{
 		}
 
 		for i := 0; i < n; i++ {
+			fmt.Printf("%4d / %4d done\r", i+1, n)
+
 			id := "processTest-" + strconv.Itoa(i)
 
 			if err := client.ClusterProcessDelete(coreclient.NewProcessID(id, "")); err != nil {
 				return err
 			}
 		}
+
+		fmt.Printf("%4d / %4d done\r", n, n)
 
 		return nil
 	},

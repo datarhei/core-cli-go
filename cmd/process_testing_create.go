@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/datarhei/core-client-go/v16/api"
@@ -26,6 +27,8 @@ var processTestCreateCmd = &cobra.Command{
 		}
 
 		for i := 0; i < n; i++ {
+			fmt.Printf("%4d / %4d done\r", i+1, n)
+
 			config := api.ProcessConfig{
 				ID:        "processTest-" + strconv.Itoa(i),
 				Owner:     owner,
@@ -63,8 +66,8 @@ var processTestCreateCmd = &cobra.Command{
 				Scheduler:      "",
 				LogPatterns:    []string{},
 				Limits: api.ProcessConfigLimits{
-					CPU:     100,
-					Memory:  100,
+					CPU:     5,
+					Memory:  50,
 					WaitFor: 0,
 				},
 				Metadata: map[string]interface{}{},
@@ -74,6 +77,8 @@ var processTestCreateCmd = &cobra.Command{
 				return err
 			}
 		}
+
+		fmt.Printf("%4d / %4d done\n", n, n)
 
 		return nil
 	},
