@@ -22,6 +22,45 @@ var replCmd = &cobra.Command{
 		defer line.Close()
 
 		line.SetCtrlCAborts(false)
+		line.SetTabCompletionStyle(liner.TabCircular)
+		line.SetWordCompleter(func(line string, pos int) (head string, completions []string, tail string) {
+			head, tail = line[:pos], line[pos:]
+			commands := strings.Split(strings.TrimSpace(head), " ")
+
+			currentCmd := rootCmd
+
+		outer:
+			for i, command := range commands {
+				isLast := i == len(commands)-1
+				cmds := currentCmd.Commands()
+
+				for _, cmd := range cmds {
+					if cmd.Use == command {
+						currentCmd = cmd
+
+						if isLast {
+							for _, cmd := range currentCmd.Commands() {
+								use, _, _ := strings.Cut(cmd.Use, " ")
+								completions = append(completions, use)
+							}
+						}
+
+						continue outer
+					}
+				}
+
+				for _, cmd := range cmds {
+					use, _, _ := strings.Cut(cmd.Use, " ")
+					if strings.HasPrefix(use, command) {
+						completions = append(completions, strings.TrimPrefix(use, command))
+					}
+				}
+			}
+
+			completions = append(completions, "")
+
+			return
+		})
 
 		home, err := os.UserHomeDir()
 		if err != nil {
