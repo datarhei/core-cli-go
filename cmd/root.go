@@ -30,6 +30,10 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
+func SetArgs(a []string) {
+	rootCmd.SetArgs(a)
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 	// Here you will define your flags and configuration settings.

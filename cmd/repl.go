@@ -79,6 +79,8 @@ var replCmd = &cobra.Command{
 		redirect := ""
 		redirectArgs := []string{}
 
+		fmt.Printf("Welcome to corecli. Type 'help' to see all commands, type 'exit' to leave.\n")
+
 		for {
 			selected := viper.GetString("cores.selected")
 			if command, err := line.Prompt(fmt.Sprintf("%s> ", selected)); err == nil {
