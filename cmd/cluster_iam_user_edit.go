@@ -35,7 +35,13 @@ var clusterIamUserEditCmd = &cobra.Command{
 			toEdit = user
 		} else {
 			if len(user.Policies) == 0 {
-				toEdit = []api.IAMPolicy{}
+				toEdit = []api.IAMPolicy{
+					{
+						Domain:   "",
+						Resource: "",
+						Actions:  []string{},
+					},
+				}
 			} else {
 				toEdit = user.Policies
 			}
@@ -53,7 +59,7 @@ var clusterIamUserEditCmd = &cobra.Command{
 
 		if !modified {
 			// They are the same, nothing has been changed. No need to store the metadata
-			fmt.Printf("No changes. User config will not be updated.")
+			fmt.Printf("No changes. User config will not be updated.\n")
 			return nil
 		}
 

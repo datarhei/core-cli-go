@@ -35,7 +35,18 @@ var iamUserEditCmd = &cobra.Command{
 		if !policies {
 			toEdit = user
 		} else {
-			toEdit = user.Policies
+			if len(user.Policies) == 0 {
+				toEdit = []api.IAMPolicy{
+					{
+						Domain:   "",
+						Resource: "",
+						Types:    []string{},
+						Actions:  []string{},
+					},
+				}
+			} else {
+				toEdit = user.Policies
+			}
 		}
 
 		data, err := json.MarshalIndent(toEdit, "", "   ")
@@ -50,7 +61,7 @@ var iamUserEditCmd = &cobra.Command{
 
 		if !modified {
 			// They are the same, nothing has been changed. No need to store the metadata
-			fmt.Printf("No changes. User config will not be updated.")
+			fmt.Printf("No changes. User config will not be updated.\n")
 			return nil
 		}
 

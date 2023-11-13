@@ -10,6 +10,7 @@ import (
 	"github.com/buildkite/shellwords"
 	"github.com/peterh/liner"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -157,6 +158,8 @@ var replCmd = &cobra.Command{
 
 				line.AppendHistory(command)
 
+				setDefaultFlags(rootCmd)
+
 				rootCmd.SetArgs(args)
 				rootCmd.Execute()
 
@@ -185,4 +188,18 @@ var replCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(replCmd)
+}
+
+func setDefaultFlags(cmd *cobra.Command) {
+	flags := cmd.Flags()
+	flags.VisitAll(func(flag *pflag.Flag) {
+		if flag.Changed {
+			flag.Value.Set(flag.DefValue)
+			flag.Changed = false
+		}
+	})
+
+	for _, cmd := range cmd.Commands() {
+		setDefaultFlags(cmd)
+	}
 }

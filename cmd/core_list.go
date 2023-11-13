@@ -46,6 +46,10 @@ var coreListCmd = &cobra.Command{
 			t.AppendRow(table.Row{name, host, version, corename, coreid})
 		}
 
+		t.SortBy([]table.SortBy{
+			{Number: 1, Mode: table.Asc},
+		})
+
 		t.SetStyle(table.StyleLight)
 
 		fmt.Println(t.Render())
