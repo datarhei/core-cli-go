@@ -191,8 +191,7 @@ func init() {
 }
 
 func setDefaultFlags(cmd *cobra.Command) {
-	flags := cmd.Flags()
-	flags.VisitAll(func(flag *pflag.Flag) {
+	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Changed {
 			flag.Value.Set(flag.DefValue)
 			flag.Changed = false
