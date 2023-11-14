@@ -88,11 +88,7 @@ var clusterProcessAddCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.ClusterProcessAdd(config); err != nil {
-			return err
-		}
-
-		return nil
+		return client.ClusterProcessAdd(config)
 	},
 }
 

@@ -89,11 +89,7 @@ var processAddCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.ProcessAdd(config); err != nil {
-			return err
-		}
-
-		return nil
+		return client.ProcessAdd(config)
 	},
 }
 
