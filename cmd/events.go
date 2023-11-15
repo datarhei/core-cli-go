@@ -13,7 +13,7 @@ import (
 
 // eventsCmd represents the metrics command
 var eventsCmd = &cobra.Command{
-	Use:   "events",
+	Use:   "events [component [key=value] [key=value] ...] ; [component [key=value] ...]",
 	Short: "Retrieve events",
 	Long:  "Retrieve events",
 	Args:  cobra.MinimumNArgs(0),
