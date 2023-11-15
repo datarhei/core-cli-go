@@ -1,6 +1,6 @@
 module github.com/datarhei/core-cli-go
 
-go 1.19
+go 1.21
 
 require (
 	github.com/buildkite/shellwords v0.0.0-20180315110454-59467a9b8e10
