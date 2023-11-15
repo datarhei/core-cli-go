@@ -85,6 +85,8 @@ var replCmd = &cobra.Command{
 		for {
 			selected := viper.GetString("cores.selected")
 			if command, err := line.Prompt(fmt.Sprintf("%s> ", selected)); err == nil {
+				command = strings.TrimSpace(command)
+
 				if strings.ToLower(command) == "exit" {
 					break
 				}
