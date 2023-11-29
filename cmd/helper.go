@@ -84,6 +84,63 @@ func connectSelectedCore() (coreclient.RestClient, error) {
 	return client, nil
 }
 
+func connectCore(name string) (coreclient.RestClient, error) {
+	list := viper.GetStringMapString("cores.list")
+
+	core, ok := list[name]
+	if !ok {
+		return nil, fmt.Errorf("selected core doesn't exist")
+	}
+
+	u, err := url.Parse(core)
+	if err != nil {
+		return nil, fmt.Errorf("invalid data for core: %w", err)
+	}
+
+	address := u.Scheme + "://" + u.Host + u.Path
+	password, _ := u.User.Password()
+
+	client, err := coreclient.New(coreclient.Config{
+		Address:      address,
+		Username:     u.User.Username(),
+		Password:     password,
+		AccessToken:  u.Query().Get("accessToken"),
+		RefreshToken: u.Query().Get("refreshToken"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("can't connect to core at %s: %w", address, err)
+	}
+
+	about, err := client.About(true)
+	if err != nil {
+		return nil, fmt.Errorf("can't fetch details from core at %s: %w", address, err)
+	}
+
+	version := about.Version.Number
+	corename := about.Name
+	coreid := about.ID
+	accessToken, refreshToken := client.Tokens()
+
+	query := u.Query()
+
+	query.Set("accessToken", accessToken)
+	query.Set("refreshToken", refreshToken)
+	query.Set("version", version)
+	query.Set("name", corename)
+	query.Set("id", coreid)
+
+	u.RawQuery = query.Encode()
+
+	list[name] = u.String()
+
+	viper.Set("cores.list", list)
+	viper.WriteConfig()
+
+	fmt.Fprintln(os.Stderr, client.String())
+
+	return client, nil
+}
+
 func getEditor() (string, string, error) {
 	editor := viper.GetString("editor")
 	if len(editor) == 0 {

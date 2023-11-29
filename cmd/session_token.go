@@ -15,10 +15,10 @@ var sessionTokenCmd = &cobra.Command{
 	Long:  "Create a session token",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		remoteFlag, _ := cmd.Flags().GetString("remote")
+		remotes, _ := cmd.Flags().GetStringSlice("remote")
+		extras, _ := cmd.Flags().GetStringSlice("extra")
 		ttlFlag, _ := cmd.Flags().GetString("ttl")
 
-		remotes := strings.Split(remoteFlag, ",")
 		ttl, err := time.ParseDuration(ttlFlag)
 		if err != nil {
 			return err
@@ -32,8 +32,16 @@ var sessionTokenCmd = &cobra.Command{
 		req := api.SessionTokenRequest{
 			Match:  args[1],
 			Remote: remotes,
-			Extra:  map[string]interface{}{},
 			TTL:    int64(ttl.Seconds()),
+		}
+
+		if len(extras) != 0 {
+			req.Extra = map[string]interface{}{}
+
+			for _, e := range extras {
+				before, after, _ := strings.Cut(e, ":")
+				req.Extra[before] = after
+			}
 		}
 
 		token, err := client.SessionToken(args[0], []api.SessionTokenRequest{req})
@@ -61,6 +69,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// processCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	sessionTokenCmd.Flags().StringP("remote", "r", "", "Comma separated list of allowed referrer hosts")
+	sessionTokenCmd.Flags().StringSliceP("remote", "r", []string{}, "Comma separated list of allowed referrer hosts")
+	sessionTokenCmd.Flags().StringSliceP("extra", "e", []string{}, "Comma separates list of key:value extra values")
 	sessionTokenCmd.Flags().StringP("ttl", "t", "24h", "Validity duration of the token")
 }

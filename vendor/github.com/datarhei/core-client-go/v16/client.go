@@ -123,6 +123,8 @@ type RestClient interface {
 	ClusterDBKeyValues() (api.ClusterKVS, error)         // GET /v3/cluster/db/kv
 	ClusterDBProcessMap() (api.ClusterProcessMap, error) // GET /v3/cluster/db/map/process
 
+	ClusterFilesystemList(name, pattern, sort, order string) ([]api.FileInfo, error) // GET /v3/cluster/fs/{storage}
+
 	ClusterProcessList(opts ProcessListOptions) ([]api.Process, error)                    // GET /v3/cluster/process
 	ClusterProcess(id ProcessID, filter []string) (api.Process, error)                    // POST /v3/cluster/process
 	ClusterProcessAdd(p api.ProcessConfig) error                                          // GET /v3/cluster/process/{id}
@@ -375,6 +377,10 @@ func New(config Config) (RestClient, error) {
 			},
 			{
 				path:       mustNewGlob("/v3/cluster/db/kv"),
+				constraint: mustNewConstraint("^16.14.0"),
+			},
+			{
+				path:       mustNewGlob("/v3/cluster/fs/*"),
 				constraint: mustNewConstraint("^16.14.0"),
 			},
 			{
