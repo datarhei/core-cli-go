@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
 	"github.com/prometheus/client_golang/prometheus"
@@ -152,7 +154,9 @@ type clusterProcessCollector struct {
 	client coreclient.RestClient
 	node   string
 
-	processDesc *prometheus.Desc
+	processDesc           *prometheus.Desc
+	processInputFPSDesc   *prometheus.Desc
+	processInputSpeedDesc *prometheus.Desc
 }
 
 func newClusterProcessCollector(client coreclient.RestClient, node string) prometheus.Collector {
@@ -163,11 +167,21 @@ func newClusterProcessCollector(client coreclient.RestClient, node string) prome
 			"cluster_process",
 			"Cluster processes by state",
 			[]string{"node", "state"}, nil),
+		processInputFPSDesc: prometheus.NewDesc(
+			"cluster_process_input_fps",
+			"Cluster process input FPS by id and input",
+			[]string{"node", "id", "input"}, nil),
+		processInputSpeedDesc: prometheus.NewDesc(
+			"cluster_process_input_speed",
+			"Cluster process input speed by id and input",
+			[]string{"node", "id", "input"}, nil),
 	}
 }
 
 func (c *clusterProcessCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.processDesc
+	ch <- c.processInputFPSDesc
+	ch <- c.processInputSpeedDesc
 }
 
 func (c *clusterProcessCollector) Collect(ch chan<- prometheus.Metric) {
@@ -181,12 +195,27 @@ func (c *clusterProcessCollector) Collect(ch chan<- prometheus.Metric) {
 	states := map[string]uint64{}
 
 	for _, p := range processes {
-		state := "FINISHED"
-		if p.State != nil {
-			state = p.State.State
+		if p.State == nil {
+			continue
 		}
 
-		states[state]++
+		states[p.State.State]++
+
+		if p.State.State != "running" {
+			continue
+		}
+
+		if !strings.HasSuffix(p.ID, ":main") {
+			continue
+		}
+
+		for _, input := range p.State.Progress.Input {
+			if input.Type != "video" {
+				continue
+			}
+
+			ch <- prometheus.MustNewConstMetric(c.processInputFPSDesc, prometheus.GaugeValue, float64(input.FPS), c.node, p.ID, input.ID+":"+strconv.FormatUint(input.Stream, 10))
+		}
 	}
 
 	for state, value := range states {
@@ -194,8 +223,65 @@ func (c *clusterProcessCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+type clusterFilesCollector struct {
+	client  coreclient.RestClient
+	node    string
+	storage string
+
+	filesDesc           *prometheus.Desc
+	filesCollisionsDesc *prometheus.Desc
+}
+
+func newClusterFilesCollector(client coreclient.RestClient, node, storage string) prometheus.Collector {
+	return &clusterFilesCollector{
+		client:  client,
+		node:    node,
+		storage: storage,
+		filesDesc: prometheus.NewDesc(
+			"cluster_files",
+			"Cluster number of files by storage",
+			[]string{"node", "storage"}, nil),
+		filesCollisionsDesc: prometheus.NewDesc(
+			"cluster_files_collisions",
+			"Cluster number of file collisions by storage",
+			[]string{"node", "storage"}, nil),
+	}
+}
+
+func (c *clusterFilesCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- c.filesDesc
+	ch <- c.filesCollisionsDesc
+}
+
+func (c *clusterFilesCollector) Collect(ch chan<- prometheus.Metric) {
+	files, err := c.client.ClusterFilesystemList(c.storage, "/**", "asc", "name")
+	if err != nil {
+		return
+	}
+
+	ch <- prometheus.MustNewConstMetric(c.filesDesc, prometheus.GaugeValue, float64(len(files)), c.node, c.storage)
+
+	collisions := map[string]uint64{}
+
+	for _, file := range files {
+		collisions[file.Name]++
+	}
+
+	ncollisions := float64(0)
+
+	for _, counter := range collisions {
+		if counter == 1 {
+			continue
+		}
+
+		ncollisions += 1
+	}
+
+	ch <- prometheus.MustNewConstMetric(c.filesCollisionsDesc, prometheus.GaugeValue, ncollisions, c.node, c.storage)
+}
+
 var clusterExporterCmd = &cobra.Command{
-	Use:   "exporter [clustername] [address]",
+	Use:   "exporter [clustername] [listenaddress]",
 	Short: "Cluster exporter related commands",
 	Long:  "Cluster exporter related commands",
 	Args:  cobra.ExactArgs(2),
@@ -227,12 +313,14 @@ var clusterExporterCmd = &cobra.Command{
 		nodeCollector := newClusterNodeCollector(client)
 		sessionCollector := newClusterHLSSessionCollector(client, about.ID)
 		processCollector := newClusterProcessCollector(client, about.ID)
+		filesCollector := newClusterFilesCollector(client, about.ID, "mem")
 
 		registry := prometheus.NewRegistry()
 
 		registry.Register(nodeCollector)
 		registry.Register(sessionCollector)
 		registry.Register(processCollector)
+		registry.Register(filesCollector)
 
 		http.Handle("/metrics", promhttp.InstrumentMetricHandler(registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{})))
 
