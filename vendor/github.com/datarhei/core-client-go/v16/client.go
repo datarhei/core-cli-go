@@ -95,6 +95,8 @@ type RestClient interface {
 	ProcessMetadata(id ProcessID, key string) (api.Metadata, error)           // GET /v3/process/{id}/metadata/{key}
 	ProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error // PUT /v3/process/{id}/metadata/{key}
 
+	PlayoutStatus(id ProcessID, inputID string) (api.PlayoutStatus, error) // GET /v3/process/{id}/playout/{inputid}/status
+
 	IdentitiesList() ([]api.IAMUser, error)                   // GET /v3/iam/user
 	Identity(name string) (api.IAMUser, error)                // GET /v3/iam/user/{name}
 	IdentityAdd(u api.IAMUser) error                          // POST /v3/iam/user
