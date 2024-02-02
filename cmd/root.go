@@ -9,6 +9,7 @@ import (
 
 var globalFlagConfigFile string
 var globalFlagCore string
+var globalFlagJq string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -42,6 +43,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&globalFlagConfigFile, "config", "", "config file (default is $HOME/.corecli.json)")
 	rootCmd.PersistentFlags().StringVar(&globalFlagCore, "core", "", "core to connect to instead of the selected one")
+	rootCmd.PersistentFlags().StringVar(&globalFlagJq, "jq", "", "Transform result with jq")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

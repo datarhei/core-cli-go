@@ -8,8 +8,8 @@ import (
 
 var clusterDbMapProcessCmd = &cobra.Command{
 	Use:   "process",
-	Short: "List a map of all processes an where they are currently deployed",
-	Long:  "List a map of all processes an where they are currently deployed",
+	Short: "List a map of all processes and where they are currently deployed",
+	Long:  "List a map of all processes and where they are currently deployed",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client, err := connectSelectedCore()
 		if err != nil {
@@ -31,9 +31,9 @@ var clusterDbMapProcessCmd = &cobra.Command{
 			}
 
 			return writeJSON(os.Stdout, m, true)
+		} else {
+			return writeJSON(os.Stdout, list, true)
 		}
-
-		return writeJSON(os.Stdout, list, true)
 	},
 }
 
