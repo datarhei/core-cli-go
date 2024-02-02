@@ -148,6 +148,7 @@ type RestClient interface {
 
 	RTMPChannels() ([]api.RTMPChannel, error) // GET /v3/rtmp
 	SRTChannels() ([]api.SRTChannel, error)   // GET /v3/srt
+	SRTChannelsRaw() ([]byte, error)          // GET /v3/srt
 
 	Sessions(collectors []string) (api.SessionsSummary, error)                                  // GET /v3/session
 	SessionsActive(collectors []string) (api.SessionsActive, error)                             // GET /v3/session/active
