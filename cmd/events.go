@@ -50,7 +50,10 @@ var eventsCmd = &cobra.Command{
 		go func(ctx context.Context, events <-chan api.Event) {
 			for {
 				select {
-				case event := <-events:
+				case event, ok := <-events:
+					if !ok {
+						return
+					}
 					writeJSON(os.Stdout, event, true)
 				case <-ctx.Done():
 					return
@@ -60,7 +63,12 @@ var eventsCmd = &cobra.Command{
 
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt)
-		<-quit
+
+		select {
+		case <-quit:
+			cancel()
+		case <-ctx.Done():
+		}
 
 		return nil
 	},
@@ -78,7 +86,7 @@ func parseFilter(args []string) ([]string, api.EventFilter, bool) {
 
 	for i, arg := range args[1:] {
 		if arg == ";" {
-			return args[i+1:], filter, false
+			return args[i+2:], filter, false
 		}
 
 		key, value, found := strings.Cut(arg, "=")
