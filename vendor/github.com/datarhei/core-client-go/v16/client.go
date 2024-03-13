@@ -65,12 +65,12 @@ type RestClient interface {
 	MemFSDeleteFile(path string) error                    // DELETE /v3/fs/mem/{path}
 	MemFSAddFile(path string, data io.Reader) error       // PUT /v3/fs/mem/{path}
 
-	FilesystemList(name, pattern, sort, order string) ([]api.FileInfo, error)       // GET /v3/fs/{name}
-	FilesystemHasFile(name, path string) bool                                       // HEAD /v3/fs/{name}/{path}
-	FilesystemGetFile(name, path string) (io.ReadCloser, error)                     // GET /v3/fs/{name}/{path}
-	FilesystemGetFileOffset(name, path string, offset int64) (io.ReadCloser, error) // GET /v3/fs/{name}/{path}
-	FilesystemDeleteFile(name, path string) error                                   // DELETE /v3/fs/{name}/{path}
-	FilesystemAddFile(name, path string, data io.Reader) error                      // PUT /v3/fs/{name}/{path}
+	FilesystemList(storage, pattern, sort, order string) ([]api.FileInfo, error)       // GET /v3/fs/{storage}
+	FilesystemHasFile(storage, path string) bool                                       // HEAD /v3/fs/{storage}/{path}
+	FilesystemGetFile(storage, path string) (io.ReadCloser, error)                     // GET /v3/fs/{storage}/{path}
+	FilesystemGetFileOffset(storage, path string, offset int64) (io.ReadCloser, error) // GET /v3/fs/{storage}/{path}
+	FilesystemDeleteFile(storage, path string) error                                   // DELETE /v3/fs/{storage}/{path}
+	FilesystemAddFile(storage, path string, data io.Reader) error                      // PUT /v3/fs/{storage}/{path}
 
 	Log() ([]api.LogEvent, error)                                                   // GET /v3/log
 	Events(ctx context.Context, filters api.EventFilters) (<-chan api.Event, error) // POST /v3/events
@@ -110,11 +110,13 @@ type RestClient interface {
 	ClusterLeave() error                       // PUT /v3/cluster/leave
 	ClusterTransferLeadership(id string) error // PUT /v3/cluster/transfer/{id}
 
-	ClusterNodeList() ([]api.ClusterNode, error)                                      // GET /v3/cluster/node
-	ClusterNode(id string) (api.ClusterNode, error)                                   // GET /v3/cluster/node/{id}
-	ClusterNodeFiles(id string) (api.ClusterNodeFiles, error)                         // GET /v3/cluster/node/{id}/files
-	ClusterNodeProcessList(id string, opts ProcessListOptions) ([]api.Process, error) // GET /v3/cluster/node/{id}/process
-	ClusterNodeVersion(id string) (api.Version, error)                                // GET /v3/cluster/node/{id}/version
+	ClusterNodeList() ([]api.ClusterNode, error)                                                // GET /v3/cluster/node
+	ClusterNode(id string) (api.ClusterNode, error)                                             // GET /v3/cluster/node/{id}
+	ClusterNodeFiles(id string) (api.ClusterNodeFiles, error)                                   // GET /v3/cluster/node/{id}/files
+	ClusterNodeProcessList(id string, opts ProcessListOptions) ([]api.Process, error)           // GET /v3/cluster/node/{id}/process
+	ClusterNodeVersion(id string) (api.Version, error)                                          // GET /v3/cluster/node/{id}/version
+	ClusterNodeFilesystemList(id, storage, pattern, sort, order string) ([]api.FileInfo, error) // GET /v3/cluster/node/{id}/fs/{storage}
+	ClusterNodeFilesystemDeleteFile(id, storage, path string) error                             // DELETE /v3/cluster/node/{id}/fs/{storage}/{path}
 
 	ClusterDBProcessList() ([]api.Process, error)        // GET /v3/cluster/db/process
 	ClusterDBProcess(id ProcessID) (api.Process, error)  // GET /v3/cluster/db/process/{id}
@@ -433,6 +435,9 @@ func New(config Config) (RestClient, error) {
 			{
 				path:       mustNewGlob("/v3/cluster/db/map/process"),
 				constraint: mustNewConstraint("^16.14.0"),
+			}, {
+				path:       mustNewGlob("/v3/cluster/node/*/fs/*"),
+				constraint: mustNewConstraint("^16.14.0"),
 			},
 		},
 		"POST": {
@@ -513,11 +518,15 @@ func New(config Config) (RestClient, error) {
 				constraint: mustNewConstraint("^16.14.0"),
 			},
 			{
-				path:       mustNewGlob("/v3/cluster/process/{id}"),
+				path:       mustNewGlob("/v3/cluster/process/*"),
 				constraint: mustNewConstraint("^16.14.0"),
 			},
 			{
-				path:       mustNewGlob("/v3/cluster/iam/user/{name}"),
+				path:       mustNewGlob("/v3/cluster/iam/user/*"),
+				constraint: mustNewConstraint("^16.14.0"),
+			},
+			{
+				path:       mustNewGlob("/v3/cluster/node/*/fs/*/**"),
 				constraint: mustNewConstraint("^16.14.0"),
 			},
 		},

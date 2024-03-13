@@ -7,7 +7,7 @@ import (
 	"github.com/datarhei/core-client-go/v16/api"
 )
 
-func (r *restclient) ClusterFilesystemList(name, pattern, sort, order string) ([]api.FileInfo, error) {
+func (r *restclient) ClusterFilesystemList(storage, pattern, sort, order string) ([]api.FileInfo, error) {
 	var files []api.FileInfo
 
 	query := &url.Values{}
@@ -15,7 +15,7 @@ func (r *restclient) ClusterFilesystemList(name, pattern, sort, order string) ([
 	query.Set("sort", sort)
 	query.Set("order", order)
 
-	data, err := r.call("GET", "/v3/cluster/fs/"+url.PathEscape(name), query, nil, "", nil)
+	data, err := r.call("GET", "/v3/cluster/fs/"+url.PathEscape(storage), query, nil, "", nil)
 	if err != nil {
 		return files, err
 	}
