@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/datarhei/core-client-go/v16/api"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
@@ -22,17 +24,55 @@ var clusterAboutCmd = &cobra.Command{
 			return err
 		}
 
-		about, err := client.Cluster()
+		aboutv1, aboutv2, err := client.Cluster()
 		if err != nil {
 			return err
 		}
 
 		if asRaw {
-			err := writeJSON(os.Stdout, about, true)
+			var err error
+			if aboutv1 != nil {
+				err = writeJSON(os.Stdout, aboutv1, true)
+			} else {
+				err = writeJSON(os.Stdout, aboutv2, true)
+			}
 			return err
 		}
 
+		var about api.ClusterAbout
+
+		if aboutv1 != nil {
+			about = aboutv1.ClusterAbout
+		} else {
+			about = aboutv2.ClusterAbout
+		}
+
 		t := table.NewWriter()
+
+		if aboutv2 != nil {
+			t.AppendHeader(table.Row{"ID", "Domains", "Version", "Status", "Leader", "Since"})
+
+			t.AppendRow(table.Row{
+				aboutv2.ID,
+				strings.Join(aboutv2.Domains, ","),
+				aboutv2.Version,
+				aboutv2.Status,
+				aboutv2.Leader.ID,
+				(time.Duration(aboutv2.Leader.ElectedSince) * time.Second).String(),
+			})
+
+			t.SetColumnConfigs([]table.ColumnConfig{
+				{Number: 3, Align: text.AlignRight},
+			})
+
+			t.SetStyle(table.StyleLight)
+
+			fmt.Println(t.Render())
+
+			fmt.Println("Nodes:")
+
+			t = table.NewWriter()
+		}
 
 		t.AppendHeader(table.Row{"ID", "Name", "Version", "Uptime", "Last Contact", "Status", "CPU", "Memory", "Throttling"})
 

@@ -10,17 +10,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// fsListCmd represents the list command
-var fsListCmd = &cobra.Command{
-	Use:   "list [fsname] [pattern]? (-s|--sort) [none|name|size|lastmod] (-o|--order) [asc|desc] (-t|--target) [url with %%s]",
+var clusterNodeFilesystemListCmd = &cobra.Command{
+	Use:   "list [nodeid] [fsname] [pattern]? (-s|--sort) [none|name|size|lastmod] (-o|--order) [asc|desc] (-t|--target) [url with %%s]",
 	Short: "List files",
 	Long:  "List files on filesystem",
-	Args:  cobra.RangeArgs(1, 2),
+	Args:  cobra.RangeArgs(2, 3),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		storage := args[0]
+		id := args[0]
+		storage := args[1]
 		pattern := ""
-		if len(args) == 2 {
-			pattern = args[1]
+		if len(args) == 3 {
+			pattern = args[2]
 		}
 
 		sort, _ := cmd.Flags().GetString("sort")
@@ -33,7 +33,7 @@ var fsListCmd = &cobra.Command{
 			return err
 		}
 
-		list, err := client.FilesystemList(storage, pattern, sort, order)
+		list, err := client.ClusterNodeFilesystemList(id, storage, pattern, sort, order)
 		if err != nil {
 			return err
 		}
@@ -54,11 +54,11 @@ var fsListCmd = &cobra.Command{
 
 		t := table.NewWriter()
 
-		t.AppendHeader(table.Row{"Name", "Size", "Last Modification"})
+		t.AppendHeader(table.Row{"Name", "Size", "Last Modification", "Node"})
 
 		for _, f := range list {
 			lastMod := time.Unix(f.LastMod, 0)
-			t.AppendRow(table.Row{f.Name, formatByteCountBinary(uint64(f.Size)), lastMod.Format("2006-01-02 15:04:05")})
+			t.AppendRow(table.Row{f.Name, formatByteCountBinary(uint64(f.Size)), lastMod.Format("2006-01-02 15:04:05"), f.CoreID})
 			totalSize += uint64(f.Size)
 		}
 
@@ -81,10 +81,10 @@ var fsListCmd = &cobra.Command{
 }
 
 func init() {
-	fsCmd.AddCommand(fsListCmd)
+	clusterNodeFilesystemCmd.AddCommand(clusterNodeFilesystemListCmd)
 
-	fsListCmd.Flags().StringP("sort", "s", "none", "Sorting criteria")
-	fsListCmd.Flags().StringP("order", "o", "asc", "Sorting direction")
-	fsListCmd.Flags().StringP("target", "t", "", "Create vegeta targets from listed files")
-	fsListCmd.Flags().BoolP("random", "r", false, "Create vegeta targets from listed files with random names, works only together with -target")
+	clusterNodeFilesystemListCmd.Flags().StringP("sort", "s", "none", "Sorting criteria")
+	clusterNodeFilesystemListCmd.Flags().StringP("order", "o", "asc", "Sorting direction")
+	clusterNodeFilesystemListCmd.Flags().StringP("target", "t", "", "Create vegeta targets from listed files")
+	clusterNodeFilesystemListCmd.Flags().BoolP("random", "r", false, "Create vegeta targets from listed files with random names, works only together with -target")
 }

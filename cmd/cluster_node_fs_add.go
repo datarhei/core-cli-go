@@ -6,15 +6,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// fsAddCmd represents the list command
-var fsAddCmd = &cobra.Command{
-	Use:   "add [fsname] [path] [(-f|--from-file) path]",
+var clusterNodeFilesystemAddCmd = &cobra.Command{
+	Use:   "add [nodeid] [fsname] [path] [(-f|--from-file) path]",
 	Short: "Upload a file",
 	Long:  "Upload a file with the given path from the filesystem.",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		storage := args[0]
-		path := args[1]
+		id := args[0]
+		storage := args[1]
+		path := args[2]
 		source, _ := cmd.Flags().GetString("from-file")
 
 		client, err := connectSelectedCore()
@@ -34,7 +34,7 @@ var fsAddCmd = &cobra.Command{
 			defer s.Close()
 		}
 
-		if err := client.FilesystemAddFile(storage, path, s); err != nil {
+		if err := client.ClusterNodeFilesystemPutFile(id, storage, path, s); err != nil {
 			return err
 		}
 
@@ -43,7 +43,7 @@ var fsAddCmd = &cobra.Command{
 }
 
 func init() {
-	fsCmd.AddCommand(fsAddCmd)
+	clusterNodeFilesystemCmd.AddCommand(clusterNodeFilesystemAddCmd)
 
-	fsAddCmd.Flags().StringP("from-file", "f", "-", "Where to read the file from, '-' for stdin")
+	clusterNodeFilesystemAddCmd.Flags().StringP("from-file", "f", "-", "Where to read the file from, '-' for stdin")
 }

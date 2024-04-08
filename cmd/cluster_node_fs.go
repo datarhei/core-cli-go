@@ -1,35 +1,20 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/datarhei/core-cli-go/ui"
-
 	"github.com/spf13/cobra"
 )
 
-var clusterUiCmd = &cobra.Command{
-	Use:   "ui",
-	Short: "Cluster UI related commands",
-	Long:  "Cluster UI related commands",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := connectSelectedCore()
-		if err != nil {
-			return err
-		}
-
-		_, _, err = client.Cluster()
-		if err != nil {
-			fmt.Println("cluster mode is not available")
-			return err
-		}
-
-		return ui.Run(client)
-	},
+var clusterNodeFilesystemCmd = &cobra.Command{
+	Use:   "fs",
+	Short: "Cluster node filesystem related commands",
+	Long:  "Cluster node filesystem related commands",
+	//Run: func(cmd *cobra.Command, args []string) {
+	//	fmt.Println("process called")
+	//},
 }
 
 func init() {
-	clusterCmd.AddCommand(clusterUiCmd)
+	clusterNodeCmd.AddCommand(clusterNodeFilesystemCmd)
 
 	// Here you will define your flags and configuration settings.
 

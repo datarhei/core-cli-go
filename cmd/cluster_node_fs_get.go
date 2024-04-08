@@ -6,15 +6,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// fsGetCmd represents the list command
-var fsGetCmd = &cobra.Command{
-	Use:   "get [fsname] [path] [(-t|--to-file) path]",
+var clusterNodeFilesystemGetCmd = &cobra.Command{
+	Use:   "get [nodeid] [fsname] [path] [(-t|--to-file) path]",
 	Short: "Download a file",
 	Long:  "Download a file with the given path from the filesystem.",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		storage := args[0]
-		path := args[1]
+		id := args[0]
+		storage := args[1]
+		path := args[2]
 		target, _ := cmd.Flags().GetString("to-file")
 
 		client, err := connectSelectedCore()
@@ -22,7 +22,7 @@ var fsGetCmd = &cobra.Command{
 			return err
 		}
 
-		file, err := client.FilesystemGetFile(storage, path)
+		file, err := client.ClusterNodeFilesystemGetFile(id, storage, path)
 		if err != nil {
 			return err
 		}
@@ -48,7 +48,7 @@ var fsGetCmd = &cobra.Command{
 }
 
 func init() {
-	fsCmd.AddCommand(fsGetCmd)
+	clusterNodeFilesystemCmd.AddCommand(clusterNodeFilesystemGetCmd)
 
-	fsGetCmd.Flags().StringP("to-file", "t", "-", "Where to write the file, '-' for stdout")
+	clusterNodeFilesystemGetCmd.Flags().StringP("to-file", "t", "-", "Where to write the file, '-' for stdout")
 }

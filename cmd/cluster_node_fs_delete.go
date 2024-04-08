@@ -6,22 +6,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// fsDeleteCmd represents the list command
-var fsDeleteCmd = &cobra.Command{
-	Use:   "delete [fsname] [path]",
+var clusterNodeFilesystemDeleteCmd = &cobra.Command{
+	Use:   "delete [nodeid] [fsname] [path]",
 	Short: "Delete a file",
 	Long:  "Delete a file with the given path from the filesystem.",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		storage := args[0]
-		path := args[1]
+		id := args[0]
+		storage := args[1]
+		path := args[2]
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		if err := client.FilesystemDeleteFile(storage, path); err != nil {
+		if err := client.ClusterNodeFilesystemDeleteFile(id, storage, path); err != nil {
 			return err
 		}
 
@@ -32,5 +32,5 @@ var fsDeleteCmd = &cobra.Command{
 }
 
 func init() {
-	fsCmd.AddCommand(fsDeleteCmd)
+	clusterNodeFilesystemCmd.AddCommand(clusterNodeFilesystemDeleteCmd)
 }

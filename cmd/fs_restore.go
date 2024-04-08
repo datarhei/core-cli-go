@@ -16,7 +16,7 @@ var fsRestoreCmd = &cobra.Command{
 	Long:  "Restore files from filesystem, the target filesystem will not be wiped.",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		name := args[0]
+		storage := args[0]
 		sourcedir := args[1]
 
 		client, err := connectSelectedCore()
@@ -80,7 +80,7 @@ var fsRestoreCmd = &cobra.Command{
 				return nil
 			}
 
-			err = client.FilesystemAddFile(name, strings.TrimPrefix(path, sourcedir), file)
+			err = client.FilesystemAddFile(storage, strings.TrimPrefix(path, sourcedir), file)
 
 			file.Close()
 

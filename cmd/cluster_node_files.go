@@ -7,7 +7,7 @@ import (
 )
 
 var clusterNodeFilesCmd = &cobra.Command{
-	Use:   "files [id]",
+	Use:   "files [nodeid]",
 	Short: "Show the files on the node with the given id",
 	Long:  "Show the files on the node with the given id",
 	Args:  cobra.ExactArgs(1),

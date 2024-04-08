@@ -128,9 +128,13 @@ func (m model) View() string {
 
 func (m model) About() tea.Cmd {
 	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
-		about, err := m.client.Cluster()
+		about, _, err := m.client.Cluster()
 		if err != nil {
 			return messages.ErrorMsg(err)
+		}
+
+		if about == nil {
+			return messages.ErrorMsg(fmt.Errorf("only cluster api v1 is supported"))
 		}
 
 		a := messages.AboutMsg{

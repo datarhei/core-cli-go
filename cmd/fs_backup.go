@@ -16,7 +16,7 @@ var fsBackupCmd = &cobra.Command{
 	Long:  "Backup files on filesystem, the targetdir will be wiped.",
 	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		name := args[0]
+		storage := args[0]
 		patterns := strings.Split(args[1], "|")
 		targetdir := args[2]
 
@@ -41,7 +41,7 @@ var fsBackupCmd = &cobra.Command{
 		filelist := map[string]uint64{}
 
 		for _, pattern := range patterns {
-			files, err := client.FilesystemList(name, pattern, "", "")
+			files, err := client.FilesystemList(storage, pattern, "", "")
 			if err != nil {
 				return err
 			}
@@ -69,7 +69,7 @@ var fsBackupCmd = &cobra.Command{
 			elapsed := time.Since(start).Seconds()
 			fmt.Printf("%3d%% done (%12d/%12d bytes, %.0f bytes/s)\r", uint64(float64(backupSize)/float64(totalSize)*100), backupSize, totalSize, float64(backupSize)/elapsed)
 
-			file, err := client.FilesystemGetFile(name, path)
+			file, err := client.FilesystemGetFile(storage, path)
 			if err != nil {
 				return err
 			}

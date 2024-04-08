@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
+	"github.com/datarhei/core-client-go/v16/api"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
@@ -117,13 +118,21 @@ func (c *clusterNodeCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
-	about, err := c.client.Cluster()
+	aboutv1, aboutv2, err := c.client.Cluster()
 	if err != nil {
 		return
 	}
 
+	var about api.ClusterAbout
+
+	if aboutv1 != nil {
+		about = aboutv1.ClusterAbout
+	} else {
+		about = aboutv2.ClusterAbout
+	}
+
 	for _, node := range about.Nodes {
-		if node.ID != about.ID {
+		if node.ID != about.NodeID {
 			continue
 		}
 
@@ -132,12 +141,12 @@ func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
 			throttling = 1.0
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.cpuLimitDesc, prometheus.GaugeValue, node.Resources.CPULimit, about.ID)
-		ch <- prometheus.MustNewConstMetric(c.cpuCurrentDesc, prometheus.GaugeValue, node.Resources.CPU, about.ID)
-		ch <- prometheus.MustNewConstMetric(c.cpuCoresDesc, prometheus.GaugeValue, node.Resources.NCPU, about.ID)
-		ch <- prometheus.MustNewConstMetric(c.memLimitDesc, prometheus.GaugeValue, float64(node.Resources.MemLimit), about.ID)
-		ch <- prometheus.MustNewConstMetric(c.memCurrentDesc, prometheus.GaugeValue, float64(node.Resources.Mem), about.ID)
-		ch <- prometheus.MustNewConstMetric(c.throttlingDesc, prometheus.GaugeValue, throttling, about.ID)
+		ch <- prometheus.MustNewConstMetric(c.cpuLimitDesc, prometheus.GaugeValue, node.Resources.CPULimit, about.NodeID)
+		ch <- prometheus.MustNewConstMetric(c.cpuCurrentDesc, prometheus.GaugeValue, node.Resources.CPU, about.NodeID)
+		ch <- prometheus.MustNewConstMetric(c.cpuCoresDesc, prometheus.GaugeValue, node.Resources.NCPU, about.NodeID)
+		ch <- prometheus.MustNewConstMetric(c.memLimitDesc, prometheus.GaugeValue, float64(node.Resources.MemLimit), about.NodeID)
+		ch <- prometheus.MustNewConstMetric(c.memCurrentDesc, prometheus.GaugeValue, float64(node.Resources.Mem), about.NodeID)
+		ch <- prometheus.MustNewConstMetric(c.throttlingDesc, prometheus.GaugeValue, throttling, about.NodeID)
 
 		break
 	}
@@ -147,7 +156,7 @@ func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
 		degraded = 1.0
 	}
 
-	ch <- prometheus.MustNewConstMetric(c.degradedDesc, prometheus.GaugeValue, degraded, about.ID)
+	ch <- prometheus.MustNewConstMetric(c.degradedDesc, prometheus.GaugeValue, degraded, about.NodeID)
 }
 
 type clusterProcessCollector struct {
@@ -305,15 +314,23 @@ var clusterExporterCmd = &cobra.Command{
 			}
 		}
 
-		about, err := client.Cluster()
+		aboutv1, aboutv2, err := client.Cluster()
 		if err != nil {
 			return err
 		}
 
+		var about api.ClusterAbout
+
+		if aboutv1 != nil {
+			about = aboutv1.ClusterAbout
+		} else {
+			about = aboutv2.ClusterAbout
+		}
+
 		nodeCollector := newClusterNodeCollector(client)
-		sessionCollector := newClusterHLSSessionCollector(client, about.ID)
-		processCollector := newClusterProcessCollector(client, about.ID)
-		filesCollector := newClusterFilesCollector(client, about.ID, "mem")
+		sessionCollector := newClusterHLSSessionCollector(client, about.NodeID)
+		processCollector := newClusterProcessCollector(client, about.NodeID)
+		filesCollector := newClusterFilesCollector(client, about.NodeID, "mem")
 
 		registry := prometheus.NewRegistry()
 

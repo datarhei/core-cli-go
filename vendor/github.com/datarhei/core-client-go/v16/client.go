@@ -104,11 +104,11 @@ type RestClient interface {
 	IdentitySetPolicies(name string, p []api.IAMPolicy) error // PUT /v3/iam/user/{name}/policy
 	IdentityDelete(name string) error                         // DELETE /v3/iam/user/{name}
 
-	Cluster() (api.ClusterAbout, error)        // GET /v3/cluster
-	ClusterHealthy() (bool, error)             // GET /v3/cluster/healthy
-	ClusterSnapshot() (io.ReadCloser, error)   // GET /v3/cluster/snapshot
-	ClusterLeave() error                       // PUT /v3/cluster/leave
-	ClusterTransferLeadership(id string) error // PUT /v3/cluster/transfer/{id}
+	Cluster() (*api.ClusterAboutV1, *api.ClusterAboutV2, error) // GET /v3/cluster
+	ClusterHealthy() (bool, error)                              // GET /v3/cluster/healthy
+	ClusterSnapshot() (io.ReadCloser, error)                    // GET /v3/cluster/snapshot
+	ClusterLeave() error                                        // PUT /v3/cluster/leave
+	ClusterTransferLeadership(id string) error                  // PUT /v3/cluster/transfer/{id}
 
 	ClusterNodeList() ([]api.ClusterNode, error)                                                // GET /v3/cluster/node
 	ClusterNode(id string) (api.ClusterNode, error)                                             // GET /v3/cluster/node/{id}
@@ -117,6 +117,8 @@ type RestClient interface {
 	ClusterNodeVersion(id string) (api.Version, error)                                          // GET /v3/cluster/node/{id}/version
 	ClusterNodeFilesystemList(id, storage, pattern, sort, order string) ([]api.FileInfo, error) // GET /v3/cluster/node/{id}/fs/{storage}
 	ClusterNodeFilesystemDeleteFile(id, storage, path string) error                             // DELETE /v3/cluster/node/{id}/fs/{storage}/{path}
+	ClusterNodeFilesystemPutFile(id, storage, path string, data io.Reader) error                // PUT /v3/cluster/node/{id}/fs/{storage}/{path}
+	ClusterNodeFilesystemGetFile(id, storage, path string) (io.ReadCloser, error)               // GET /v3/cluster/node/{id}/fs/{storage}/{path}
 
 	ClusterDBProcessList() ([]api.Process, error)        // GET /v3/cluster/db/process
 	ClusterDBProcess(id ProcessID) (api.Process, error)  // GET /v3/cluster/db/process/{id}
@@ -439,6 +441,10 @@ func New(config Config) (RestClient, error) {
 				path:       mustNewGlob("/v3/cluster/node/*/fs/*"),
 				constraint: mustNewConstraint("^16.14.0"),
 			},
+			{
+				path:       mustNewGlob("/v3/cluster/node/*/fs/*/**"),
+				constraint: mustNewConstraint("^16.14.0"),
+			},
 		},
 		"POST": {
 			{
@@ -509,6 +515,10 @@ func New(config Config) (RestClient, error) {
 			},
 			{
 				path:       mustNewGlob("/v3/cluster/transfer/*"),
+				constraint: mustNewConstraint("^16.14.0"),
+			},
+			{
+				path:       mustNewGlob("/v3/cluster/node/*/fs/*/**"),
 				constraint: mustNewConstraint("^16.14.0"),
 			},
 		},
@@ -783,10 +793,6 @@ func (r *restclient) refresh() error {
 	req.Header.Add("Authorization", "Bearer "+r.refreshToken.String())
 
 	status, body, err := r.request(req)
-	if err != nil {
-		return err
-	}
-
 	if err != nil {
 		return err
 	}
