@@ -118,6 +118,8 @@ func (c *clusterNodeCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
+	coreabout, _ := c.client.About(true)
+
 	aboutv1, aboutv2, err := c.client.Cluster()
 	if err != nil {
 		return
@@ -132,7 +134,7 @@ func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	for _, node := range about.Nodes {
-		if node.ID != about.NodeID {
+		if node.ID != coreabout.ID {
 			continue
 		}
 
@@ -141,12 +143,12 @@ func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
 			throttling = 1.0
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.cpuLimitDesc, prometheus.GaugeValue, node.Resources.CPULimit, about.NodeID)
-		ch <- prometheus.MustNewConstMetric(c.cpuCurrentDesc, prometheus.GaugeValue, node.Resources.CPU, about.NodeID)
-		ch <- prometheus.MustNewConstMetric(c.cpuCoresDesc, prometheus.GaugeValue, node.Resources.NCPU, about.NodeID)
-		ch <- prometheus.MustNewConstMetric(c.memLimitDesc, prometheus.GaugeValue, float64(node.Resources.MemLimit), about.NodeID)
-		ch <- prometheus.MustNewConstMetric(c.memCurrentDesc, prometheus.GaugeValue, float64(node.Resources.Mem), about.NodeID)
-		ch <- prometheus.MustNewConstMetric(c.throttlingDesc, prometheus.GaugeValue, throttling, about.NodeID)
+		ch <- prometheus.MustNewConstMetric(c.cpuLimitDesc, prometheus.GaugeValue, node.Resources.CPULimit, node.ID)
+		ch <- prometheus.MustNewConstMetric(c.cpuCurrentDesc, prometheus.GaugeValue, node.Resources.CPU, node.ID)
+		ch <- prometheus.MustNewConstMetric(c.cpuCoresDesc, prometheus.GaugeValue, node.Resources.NCPU, node.ID)
+		ch <- prometheus.MustNewConstMetric(c.memLimitDesc, prometheus.GaugeValue, float64(node.Resources.MemLimit), node.ID)
+		ch <- prometheus.MustNewConstMetric(c.memCurrentDesc, prometheus.GaugeValue, float64(node.Resources.Mem), node.ID)
+		ch <- prometheus.MustNewConstMetric(c.throttlingDesc, prometheus.GaugeValue, throttling, node.ID)
 
 		break
 	}
@@ -156,7 +158,7 @@ func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
 		degraded = 1.0
 	}
 
-	ch <- prometheus.MustNewConstMetric(c.degradedDesc, prometheus.GaugeValue, degraded, about.NodeID)
+	ch <- prometheus.MustNewConstMetric(c.degradedDesc, prometheus.GaugeValue, degraded, coreabout.ID)
 }
 
 type clusterProcessCollector struct {
@@ -314,23 +316,12 @@ var clusterExporterCmd = &cobra.Command{
 			}
 		}
 
-		aboutv1, aboutv2, err := client.Cluster()
-		if err != nil {
-			return err
-		}
-
-		var about api.ClusterAbout
-
-		if aboutv1 != nil {
-			about = aboutv1.ClusterAbout
-		} else {
-			about = aboutv2.ClusterAbout
-		}
+		coreabout, _ := client.About(true)
 
 		nodeCollector := newClusterNodeCollector(client)
-		sessionCollector := newClusterHLSSessionCollector(client, about.NodeID)
-		processCollector := newClusterProcessCollector(client, about.NodeID)
-		filesCollector := newClusterFilesCollector(client, about.NodeID, "mem")
+		sessionCollector := newClusterHLSSessionCollector(client, coreabout.ID)
+		processCollector := newClusterProcessCollector(client, coreabout.ID)
+		filesCollector := newClusterFilesCollector(client, coreabout.ID, "mem")
 
 		registry := prometheus.NewRegistry()
 

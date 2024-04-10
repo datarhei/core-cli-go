@@ -27,6 +27,7 @@ type ClusterNodeCore struct {
 	Error       string  `json:"error"`
 	LastContact float64 `json:"last_contact_ms"` // milliseconds
 	Latency     float64 `json:"latency_ms"`      // milliseconds
+	Version     string  `json:"version"`
 }
 
 type ClusterNodeResources struct {
@@ -55,7 +56,6 @@ type ClusterAboutLeader struct {
 }
 
 type ClusterAbout struct {
-	NodeID      string        `json:"node_id"`
 	Raft        ClusterRaft   `json:"raft"`
 	Nodes       []ClusterNode `json:"nodes"`
 	Version     string        `json:"version"`

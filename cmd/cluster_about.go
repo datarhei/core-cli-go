@@ -74,7 +74,7 @@ var clusterAboutCmd = &cobra.Command{
 			t = table.NewWriter()
 		}
 
-		t.AppendHeader(table.Row{"ID", "Name", "Version", "Uptime", "Last Contact", "Status", "CPU", "Memory", "Throttling"})
+		t.AppendHeader(table.Row{"ID", "Name", "Version", "Uptime", "Last Contact", "Status", "Core Version", "CPU", "Memory", "Throttling"})
 
 		for _, n := range about.Nodes {
 			status := "follower"
@@ -104,6 +104,7 @@ var clusterAboutCmd = &cobra.Command{
 				(time.Duration(n.Uptime) * time.Second).String(),
 				(time.Duration(n.LastContact) * time.Millisecond).String(),
 				status,
+				n.Core.Version,
 				fmt.Sprintf("%.1f%%", cpuusage),
 				fmt.Sprintf("%.1f%%", memoryusage),
 				fmt.Sprintf("%v", n.Resources.IsThrottling),

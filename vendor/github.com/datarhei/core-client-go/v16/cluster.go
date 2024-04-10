@@ -38,8 +38,6 @@ func (r *restclient) Cluster() (*api.ClusterAboutV1, *api.ClusterAboutV2, error)
 		if err != nil {
 			return nil, nil, err
 		}
-
-		aboutV1.NodeID = aboutV1.ID
 	} else if strings.HasPrefix(v.Version, "2.") {
 		aboutV2 = &api.ClusterAboutV2{}
 
