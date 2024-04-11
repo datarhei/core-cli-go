@@ -21,7 +21,7 @@ var clusterNodeFilesystemCleanupCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		storage := args[0]
 		pattern := ""
-		execute, _ := cmd.Flags().GetBool("x")
+		execute, _ := cmd.Flags().GetBool("execute")
 
 		if len(args) > 1 {
 			pattern = args[1]
@@ -69,7 +69,10 @@ var clusterNodeFilesystemCleanupCmd = &cobra.Command{
 			others := []string{}
 			for _, file := range list[1:] {
 				if execute {
-					client.ClusterNodeFilesystemDeleteFile(file.CoreID, storage, file.Name)
+					err := client.ClusterNodeFilesystemDeleteFile(file.CoreID, storage, file.Name)
+					if err != nil {
+						fmt.Printf("%s\n", err.Error())
+					}
 				}
 				nduplicates++
 				others = append(others, file.CoreID)
