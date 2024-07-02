@@ -373,11 +373,12 @@ func formatByteCountBinary(b uint64) string {
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
-func processTable(list []coreclientapi.Process, processMap map[string]string) {
+func processTable(list []coreclientapi.Process, processMap map[string]string, nodes map[string]coreclientapi.ClusterNode) {
 	t := table.NewWriter()
 
 	t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime", "Node", "Last Log"})
 
+	nodeCount := map[string]uint64{}
 	stateCount := map[string]uint64{}
 	deployCount := map[string]uint64{}
 
@@ -433,9 +434,17 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 			deployCount[text.FgGreen.Sprint("DEPLOYED")]++
 		}
 
+		nodeCount[p.CoreID]++
+
 		cpu := fmt.Sprintf("%.1f%%", p.State.Resources.CPU.Current)
 		if p.State.Resources.CPU.IsThrottling {
 			cpu = "* " + cpu
+			if nodes != nil {
+				if n, ok := nodes[p.CoreID]; ok {
+					n.Resources.IsThrottling = true
+					nodes[p.CoreID] = n
+				}
+			}
 		}
 
 		lastlog := p.State.LastLog
@@ -478,6 +487,8 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 
 	fmt.Println(t.Render())
 
+	// print process state count
+
 	t = table.NewWriter()
 
 	t.AppendHeader(table.Row{"State", "Count"})
@@ -504,6 +515,8 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 
 	fmt.Println(t.Render())
 
+	// print deployment count
+
 	t = table.NewWriter()
 
 	t.AppendHeader(table.Row{"Deployment", "Count"})
@@ -520,6 +533,60 @@ func processTable(list []coreclientapi.Process, processMap map[string]string) {
 	t.AppendFooter(table.Row{
 		"",
 		sum,
+	})
+
+	t.SetStyle(table.StyleLight)
+
+	fmt.Println(t.Render())
+
+	// print node count
+
+	t = table.NewWriter()
+
+	t.AppendHeader(table.Row{"Node", "Count", "CPU", "Memory", "Throttling"})
+
+	sum = uint64(0)
+	for nodeid, count := range nodeCount {
+		cpu := "n/a"
+		memory := "n/a"
+		throttling := false
+
+		if n, ok := nodes[nodeid]; ok {
+			if n.Resources.CPULimit != 0 {
+				cpu = fmt.Sprintf("%.1f%%", n.Resources.CPU/n.Resources.CPULimit*100)
+			}
+
+			if n.Resources.MemLimit != 0 {
+				memory = fmt.Sprintf("%.1f%%", float64(n.Resources.Mem)/float64(n.Resources.MemLimit)*100)
+			}
+
+			throttling = n.Resources.IsThrottling
+		}
+
+		t.AppendRow(table.Row{
+			nodeid,
+			count,
+			cpu,
+			memory,
+			throttling,
+		})
+		sum += count
+	}
+
+	t.AppendFooter(table.Row{
+		"",
+		sum,
+	})
+
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Number: 2, Align: text.AlignRight},
+		{Number: 3, Align: text.AlignRight},
+		{Number: 4, Align: text.AlignRight},
+		{Number: 5, Align: text.AlignRight},
+	})
+
+	t.SortBy([]table.SortBy{
+		{Number: 1, Mode: table.Asc},
 	})
 
 	t.SetStyle(table.StyleLight)

@@ -58,7 +58,7 @@ var processListCmd = &cobra.Command{
 			pmap[coreclient.NewProcessID(p.ID, p.Domain).String()] = p.CoreID
 		}
 
-		processTable(list, pmap)
+		processTable(list, pmap, nil)
 
 		return nil
 	},

@@ -1,6 +1,7 @@
 package coreclient
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -70,8 +71,15 @@ func (r *restclient) ClusterSnapshot() (io.ReadCloser, error) {
 	return r.stream(context.Background(), "GET", "/v3/cluster/snapshot", nil, nil, "", nil)
 }
 
-func (r *restclient) ClusterLeave() error {
-	_, err := r.call("PUT", "/v3/cluster/leave", nil, nil, "", nil)
+func (r *restclient) ClusterLeave(id string) error {
+	var buf bytes.Buffer
+
+	e := json.NewEncoder(&buf)
+	e.Encode(api.ClusterNodeID{
+		ID: id,
+	})
+
+	_, err := r.call("PUT", "/v3/cluster/leave", nil, nil, "application/json", &buf)
 
 	return err
 }

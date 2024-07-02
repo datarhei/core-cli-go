@@ -1,6 +1,11 @@
 package coreclient
 
-import "github.com/datarhei/core-client-go/v16/api"
+import (
+	"bytes"
+
+	"github.com/datarhei/core-client-go/v16/api"
+	"github.com/goccy/go-json"
+)
 
 func (r *restclient) ClusterProcessList(opts ProcessListOptions) ([]api.Process, error) {
 	return r.processList("cluster", opts)
@@ -40,4 +45,30 @@ func (r *restclient) ClusterProcessProbe(id ProcessID) (api.Probe, error) {
 
 func (r *restclient) ClusterProcessProbeConfig(config api.ProcessConfig, coreid string) (api.Probe, error) {
 	return r.processProbeConfig("cluster", config, coreid)
+}
+
+func (r *restclient) ClusterRelocateProcess(id ProcessID, nodeid string) error {
+	var buf bytes.Buffer
+
+	p := []api.ClusterProcessReallocate{
+		{
+			TargetNodeID: nodeid,
+			Processes: []api.ProcessID{
+				{
+					ID:     id.ID,
+					Domain: id.Domain,
+				},
+			},
+		},
+	}
+
+	e := json.NewEncoder(&buf)
+	e.Encode(p)
+
+	_, err := r.call("PUT", "/v3/cluster/reallocation", nil, nil, "application/json", &buf)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

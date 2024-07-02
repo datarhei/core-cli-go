@@ -74,12 +74,12 @@ var clusterAboutCmd = &cobra.Command{
 			t = table.NewWriter()
 		}
 
-		t.AppendHeader(table.Row{"ID", "Name", "Version", "Uptime", "Last Contact", "Status", "Core Version", "CPU", "Memory", "Throttling"})
+		t.AppendHeader(table.Row{"ID", "Name", "Version", "Uptime", "Last Contact", "Status", "Role", "Core Version", "CPU", "Memory", "Throttling", "Error"})
 
 		for _, n := range about.Nodes {
-			status := "follower"
+			role := "follower"
 			if n.Leader {
-				status = "leader"
+				role = "leader"
 			}
 
 			cpuusage := 0.0
@@ -103,11 +103,13 @@ var clusterAboutCmd = &cobra.Command{
 				n.Version,
 				(time.Duration(n.Uptime) * time.Second).String(),
 				(time.Duration(n.LastContact) * time.Millisecond).String(),
-				status,
+				n.Status,
+				role,
 				n.Core.Version,
 				fmt.Sprintf("%.1f%%", cpuusage),
 				fmt.Sprintf("%.1f%%", memoryusage),
 				fmt.Sprintf("%v", n.Resources.IsThrottling),
+				n.Error,
 			})
 		}
 
@@ -118,6 +120,7 @@ var clusterAboutCmd = &cobra.Command{
 			{Number: 6, Align: text.AlignRight},
 			{Number: 7, Align: text.AlignRight},
 			{Number: 8, Align: text.AlignRight},
+			{Number: 9, Align: text.AlignRight},
 		})
 
 		t.SortBy([]table.SortBy{

@@ -58,7 +58,7 @@ var clusterNodeProcessesCmd = &cobra.Command{
 			return err
 		}
 
-		processTable(list, pmap)
+		processTable(list, pmap, nil)
 
 		return nil
 	},

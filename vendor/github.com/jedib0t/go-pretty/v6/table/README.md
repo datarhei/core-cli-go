@@ -7,9 +7,9 @@ Pretty-print tables into ASCII/Unicode strings.
   - Add Header(s) and Footer(s) (`AppendHeader`/`AppendFooter`)
   - Add a Separator manually after any Row (`AppendSeparator`)
   - Auto Index Rows (1, 2, 3 ...) and Columns (A, B, C, ...) (`SetAutoIndex`)
-  - Auto Merge
+  - Auto Merge (_not supported in CSV/Markdown/TSV modes_)
     - Cells in a Row (`RowConfig.AutoMerge`)
-    - Columns (`ColumnConfig.AutoMerge`)
+    - Columns (`ColumnConfig.AutoMerge`) (_not supported in HTML mode_)
   - Limit the length of
     - Rows (`SetAllowedRowLength`)
     - Columns (`ColumnConfig.Width*`)
@@ -37,6 +37,7 @@ Pretty-print tables into ASCII/Unicode strings.
     - CSV
     - HTML Table (with custom CSS Class)
     - Markdown Table
+    - TSV
 
 ```
 +---------------------------------------------------------------------+

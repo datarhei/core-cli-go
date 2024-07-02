@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
+	"github.com/datarhei/core-client-go/v16/api"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +29,7 @@ var clusterProcessListCmd = &cobra.Command{
 		refpattern, _ := cmd.Flags().GetString("refpattern")
 		ownerpattern, _ := cmd.Flags().GetString("ownerpattern")
 		domainpattern, _ := cmd.Flags().GetString("domainpattern")
+		load, _ := cmd.Flags().GetBool("load")
 
 		list, err := client.ClusterProcessList(coreclient.ProcessListOptions{
 			ID:            strings.Split(ids, ","),
@@ -56,7 +58,38 @@ var clusterProcessListCmd = &cobra.Command{
 			return err
 		}
 
-		processTable(list, pmap)
+		aboutv1, aboutv2, err := client.Cluster()
+		if err != nil {
+			return err
+		}
+
+		if asRaw {
+			var err error
+			if aboutv1 != nil {
+				err = writeJSON(os.Stdout, aboutv1, true)
+			} else {
+				err = writeJSON(os.Stdout, aboutv2, true)
+			}
+			return err
+		}
+
+		nodes := map[string]api.ClusterNode{}
+
+		if load {
+			var about api.ClusterAbout
+
+			if aboutv1 != nil {
+				about = aboutv1.ClusterAbout
+			} else {
+				about = aboutv2.ClusterAbout
+			}
+
+			for _, n := range about.Nodes {
+				nodes[n.ID] = n
+			}
+		}
+
+		processTable(list, pmap, nodes)
 
 		return nil
 	},
@@ -73,4 +106,6 @@ func init() {
 	clusterProcessListCmd.Flags().String("refpattern", "", "A glob pattern for the process references")
 	clusterProcessListCmd.Flags().String("ownerpattern", "", "A gob pattern for the process owners")
 	clusterProcessListCmd.Flags().String("domainpattern", "", "A gob pattern for the process domains")
+
+	clusterProcessListCmd.Flags().Bool("load", false, "Whether to show node resources")
 }

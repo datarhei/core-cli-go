@@ -80,7 +80,7 @@ var clusterFsListCmd = &cobra.Command{
 }
 
 func init() {
-	clusterFsCmd.AddCommand(clusterFsListCmd)
+	clusterFilesystemCmd.AddCommand(clusterFsListCmd)
 
 	clusterFsListCmd.Flags().StringP("sort", "s", "none", "Sorting criteria")
 	clusterFsListCmd.Flags().StringP("order", "o", "asc", "Sorting direction")

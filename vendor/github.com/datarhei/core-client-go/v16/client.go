@@ -110,7 +110,7 @@ type RestClient interface {
 	Cluster() (*api.ClusterAboutV1, *api.ClusterAboutV2, error) // GET /v3/cluster
 	ClusterHealthy() (bool, error)                              // GET /v3/cluster/healthy
 	ClusterSnapshot() (io.ReadCloser, error)                    // GET /v3/cluster/snapshot
-	ClusterLeave() error                                        // PUT /v3/cluster/leave
+	ClusterLeave(id string) error                               // PUT /v3/cluster/leave
 	ClusterTransferLeadership(id string) error                  // PUT /v3/cluster/transfer/{id}
 
 	ClusterNodeList() ([]api.ClusterNode, error)                                                // GET /v3/cluster/node
@@ -118,6 +118,8 @@ type RestClient interface {
 	ClusterNodeFiles(id string) (api.ClusterNodeFiles, error)                                   // GET /v3/cluster/node/{id}/files
 	ClusterNodeProcessList(id string, opts ProcessListOptions) ([]api.Process, error)           // GET /v3/cluster/node/{id}/process
 	ClusterNodeVersion(id string) (api.Version, error)                                          // GET /v3/cluster/node/{id}/version
+	ClusterNodeState(id string) (api.ClusterNodeState, error)                                   // GET /v3/cluster/node/{id}/state
+	ClusterNodeStateSet(id, state string) error                                                 // PUT /v3/cluster/node/{id}/state
 	ClusterNodeFilesystemList(id, storage, pattern, sort, order string) ([]api.FileInfo, error) // GET /v3/cluster/node/{id}/fs/{storage}
 	ClusterNodeFilesystemDeleteFile(id, storage, path string) error                             // DELETE /v3/cluster/node/{id}/fs/{storage}/{path}
 	ClusterNodeFilesystemPutFile(id, storage, path string, data io.Reader) error                // PUT /v3/cluster/node/{id}/fs/{storage}/{path}
@@ -131,6 +133,7 @@ type RestClient interface {
 	ClusterDBLocks() ([]api.ClusterLock, error)          // GET /v3/cluster/db/locks
 	ClusterDBKeyValues() (api.ClusterKVS, error)         // GET /v3/cluster/db/kv
 	ClusterDBProcessMap() (api.ClusterProcessMap, error) // GET /v3/cluster/db/map/process
+	ClusterDBNodes() ([]api.ClusterStoreNode, error)     // GET /v3/cluster/db/node
 
 	ClusterFilesystemList(name, pattern, sort, order string) ([]api.FileInfo, error) // GET /v3/cluster/fs/{storage}
 
@@ -144,6 +147,8 @@ type RestClient interface {
 	ClusterProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error      // PUT /v3/cluster/process/{id}/metadata/{key}
 	ClusterProcessProbe(id ProcessID) (api.Probe, error)                                  // GET /v3/cluster/process/{id}/probe
 	ClusterProcessProbeConfig(config api.ProcessConfig, coreid string) (api.Probe, error) // POST /v3/cluster/process/probe
+
+	ClusterRelocateProcess(id ProcessID, nodeid string) error // PUT /v3/cluster/reallocate
 
 	ClusterIdentitiesList() ([]api.IAMUser, error)                   // GET /v3/cluster/iam/user
 	ClusterIdentity(name string) (api.IAMUser, error)                // GET /v3/cluster/iam/user/{name}
@@ -448,6 +453,14 @@ func New(config Config) (RestClient, error) {
 				path:       mustNewGlob("/v3/cluster/node/*/fs/*/**"),
 				constraint: mustNewConstraint("^16.14.0"),
 			},
+			{
+				path:       mustNewGlob("/v3/cluster/db/node"),
+				constraint: mustNewConstraint("^16.14.0"),
+			},
+			{
+				path:       mustNewGlob("/v3/cluster/node/*/state"),
+				constraint: mustNewConstraint("^16.14.0"),
+			},
 		},
 		"POST": {
 			{
@@ -522,6 +535,14 @@ func New(config Config) (RestClient, error) {
 			},
 			{
 				path:       mustNewGlob("/v3/cluster/node/*/fs/*/**"),
+				constraint: mustNewConstraint("^16.14.0"),
+			},
+			{
+				path:       mustNewGlob("/v3/cluster/reallocate"),
+				constraint: mustNewConstraint("^16.14.0"),
+			},
+			{
+				path:       mustNewGlob("/v3/cluster/node/*/state"),
 				constraint: mustNewConstraint("^16.14.0"),
 			},
 		},
@@ -967,7 +988,7 @@ func (r *restclient) call(method, path string, query *url.Values, header http.He
 
 	body, err := r.stream(ctx, method, path, query, header, contentType, data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s %s: %w", method, path, err)
 	}
 
 	defer body.Close()

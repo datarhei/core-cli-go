@@ -1,6 +1,7 @@
 package coreclient
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/url"
@@ -35,6 +36,37 @@ func (r *restclient) ClusterNode(id string) (api.ClusterNode, error) {
 	err = json.Unmarshal(data, &node)
 
 	return node, err
+}
+
+func (r *restclient) ClusterNodeState(id string) (api.ClusterNodeState, error) {
+	var node api.ClusterNodeState
+
+	data, err := r.call("GET", "/v3/cluster/node/"+url.PathEscape(id)+"/state", nil, nil, "", nil)
+	if err != nil {
+		return node, err
+	}
+
+	err = json.Unmarshal(data, &node)
+
+	return node, err
+}
+
+func (r *restclient) ClusterNodeStateSet(id, state string) error {
+	var buf bytes.Buffer
+
+	p := api.ClusterNodeState{
+		State: state,
+	}
+
+	e := json.NewEncoder(&buf)
+	e.Encode(p)
+
+	_, err := r.call("PUT", "/v3/cluster/node/"+url.PathEscape(id)+"/state", nil, nil, "application/json", &buf)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *restclient) ClusterNodeFiles(id string) (api.ClusterNodeFiles, error) {

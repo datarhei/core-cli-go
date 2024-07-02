@@ -12,6 +12,7 @@ import (
 	"github.com/datarhei/core-cli-go/ui/components/processes"
 	"github.com/datarhei/core-cli-go/ui/messages"
 	coreclient "github.com/datarhei/core-client-go/v16"
+	"github.com/datarhei/core-client-go/v16/api"
 )
 
 type model struct {
@@ -128,19 +129,24 @@ func (m model) View() string {
 
 func (m model) About() tea.Cmd {
 	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
-		about, _, err := m.client.Cluster()
+		node, _ := m.client.About(false)
+		aboutv1, aboutv2, err := m.client.Cluster()
 		if err != nil {
 			return messages.ErrorMsg(err)
 		}
 
-		if about == nil {
-			return messages.ErrorMsg(fmt.Errorf("only cluster api v1 is supported"))
+		var about api.ClusterAbout
+
+		if aboutv1 != nil {
+			about = aboutv1.ClusterAbout
+		} else {
+			about = aboutv2.ClusterAbout
 		}
 
 		a := messages.AboutMsg{
 			Nodes:       []messages.AboutNode{},
-			ID:          about.ID,
-			Name:        about.Name,
+			ID:          node.ID,
+			Name:        node.Name,
 			Version:     about.Version,
 			Degraded:    about.Degraded,
 			DegradedErr: about.DegradedErr,

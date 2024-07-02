@@ -114,3 +114,16 @@ func (r *restclient) ClusterDBProcessMap() (api.ClusterProcessMap, error) {
 
 	return m, err
 }
+
+func (r *restclient) ClusterDBNodes() ([]api.ClusterStoreNode, error) {
+	var m []api.ClusterStoreNode
+
+	data, err := r.call("GET", "/v3/cluster/db/node", nil, nil, "", nil)
+	if err != nil {
+		return m, err
+	}
+
+	err = json.Unmarshal(data, &m)
+
+	return m, err
+}

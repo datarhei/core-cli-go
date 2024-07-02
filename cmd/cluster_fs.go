@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var clusterFsCmd = &cobra.Command{
+var clusterFilesystemCmd = &cobra.Command{
 	Use:   "fs",
 	Short: "Cluster FS related commands",
 	Long:  "Cluster FS related commands",
@@ -14,7 +14,7 @@ var clusterFsCmd = &cobra.Command{
 }
 
 func init() {
-	clusterCmd.AddCommand(clusterFsCmd)
+	clusterCmd.AddCommand(clusterFilesystemCmd)
 
 	// Here you will define your flags and configuration settings.
 
