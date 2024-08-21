@@ -406,6 +406,8 @@ func processTable(list []coreclientapi.Process, processMap map[string]string, no
 			state = text.FgGreen.Sprint(state)
 		case "FINISHED":
 			state = text.Colors{text.FgWhite, text.Faint}.Sprint(state)
+		case "DEPLOYING":
+			state = text.Colors{text.FgWhite, text.Faint}.Sprint(state)
 		case "FAILED":
 			state = text.FgRed.Sprint(state)
 		case "STARTING":
@@ -749,4 +751,26 @@ func StringAlphanumeric(length int) string {
 
 func String(length int) string {
 	return StringWithCharset(length, CharsetAll)
+}
+
+func loadTemplate(name string) (coreclientapi.ProcessConfig, error) {
+	config := coreclientapi.ProcessConfig{}
+	templates := viper.GetStringMap("templates")
+
+	data, hasTemplate := templates[name]
+	if !hasTemplate {
+		return config, fmt.Errorf("the template with name '%s' doesn't exist", name)
+	}
+
+	xxx, err := json.Marshal(data)
+	if err != nil {
+		return config, err
+	}
+
+	err = json.Unmarshal(xxx, &config)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
 }

@@ -5,29 +5,49 @@ import (
 	"strconv"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
-	"github.com/datarhei/core-client-go/v16/api"
+	coreclientapi "github.com/datarhei/core-client-go/v16/api"
 	"github.com/spf13/cobra"
 )
 
 // processTestCmd represents the process command
 var processTestCmd = &cobra.Command{
-	Use:   "test [number of processes] [owner] [source]",
+	Use:   "test [template] [number of processes] [owner] [domain]?",
 	Short: "Process test",
 	Long:  "Process test",
-	Args:  cobra.ExactArgs(3),
+	Args:  cobra.RangeArgs(3, 4),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		n, err := strconv.Atoi(args[0])
+		template := args[0]
+		n, err := strconv.Atoi(args[1])
 		if err != nil {
 			return err
 		}
-		owner := args[1]
-		source := args[2]
+		owner := args[2]
+		domain := ""
+		if len(args) == 4 {
+			domain = args[3]
+		}
 
 		update, _ := cmd.Flags().GetBool("update")
-		thumbs, _ := cmd.Flags().GetBool("thumbs")
+		thumbs, _ := cmd.Flags().GetString("thumbs")
+		autostart, _ := cmd.Flags().GetBool("autostart")
+		metadata, _ := cmd.Flags().GetInt("metadata")
 
 		if n < 0 {
 			return fmt.Errorf("the number of process must be positive")
+		}
+
+		config, err := loadTemplate(template)
+		if err != nil {
+			return err
+		}
+
+		tconfig := coreclientapi.ProcessConfig{}
+
+		if len(thumbs) != 0 {
+			tconfig, err = loadTemplate(thumbs)
+			if err != nil {
+				return err
+			}
 		}
 
 		client, err := connectSelectedCore()
@@ -36,10 +56,10 @@ var processTestCmd = &cobra.Command{
 		}
 
 		list, err := client.ProcessList(coreclient.ProcessListOptions{
+			Filter:        []string{"state"},
 			IDPattern:     "test_*",
-			RefPattern:    "test_*",
 			OwnerPattern:  owner,
-			DomainPattern: "",
+			DomainPattern: domain,
 		})
 		if err != nil {
 			return err
@@ -56,109 +76,14 @@ var processTestCmd = &cobra.Command{
 		for i := 0; i < n; i++ {
 			name := "test_" + strconv.Itoa(i)
 
-			config := api.ProcessConfig{
-				ID:        name + "_main",
-				Owner:     owner,
-				Domain:    "",
-				Type:      "ffmpeg",
-				Reference: name,
-				Input: []api.ProcessConfigIO{
-					{
-						ID:      "in_video",
-						Address: source,
-						Options: []string{
-							"-thread_queue_size",
-							"1024",
-							"-re",
-							"-copyts",
-							"-start_at_zero",
-							"-fflags",
-							"+genpts+igndts",
-						},
-						Cleanup: []api.ProcessConfigIOCleanup{},
-					},
-					{
-						ID:      "in_audio",
-						Address: "anullsrc=r=44100:cl=mono",
-						Options: []string{
-							"-f",
-							"lavfi",
-							"-thread_queue_size",
-							"1024",
-							"-re",
-						},
-						Cleanup: []api.ProcessConfigIOCleanup{},
-					},
-				},
-				Output: []api.ProcessConfigIO{
-					{
-						ID:      "out",
-						Address: "{fs:mem}/" + name + "_%v.m3u8",
-						Options: []string{
-							"-c:v:0",
-							"copy",
-							"-bsf:v:0",
-							"h264_metadata",
-							"-c:a:0",
-							"aac",
-							"-map",
-							"0:v:0",
-							"-map",
-							"1:a:0",
-							"-f",
-							"hls",
-							"-start_number",
-							"0",
-							"-hls_time",
-							"2",
-							"-hls_list_size",
-							"6",
-							"-hls_delete_threshold",
-							"12",
-							"-hls_flags",
-							"append_list+delete_segments+program_date_time+independent_segments",
-							"-hls_segment_type",
-							"mpegts",
-							"-hls_segment_filename",
-							"{fs:mem}/" + name + "_%v_%0004d.ts",
-							"-master_pl_name",
-							name + ".m3u8",
-							"-master_pl_publish_rate",
-							"5",
-							"-var_stream_map",
-							"v:0,a:0",
-							"-y",
-							"-method",
-							"PUT",
-							"-http_persistent",
-							"1",
-							"-ignore_io_errors",
-							"1",
-						},
-						Cleanup: []api.ProcessConfigIOCleanup{
-							{
-								Pattern:       "mem:/" + name + "_*",
-								MaxFiles:      20,
-								MaxFileAge:    0,
-								PurgeOnDelete: true,
-							},
-						},
-					},
-				},
-				Options:        []string{},
-				Reconnect:      true,
-				ReconnectDelay: 5,
-				Autostart:      true,
-				StaleTimeout:   10,
-				Timeout:        0,
-				Scheduler:      "",
-				LogPatterns:    []string{},
-				Limits: api.ProcessConfigLimits{
-					CPU:     10,
-					Memory:  50,
-					WaitFor: 10,
-				},
-				Metadata: map[string]interface{}{},
+			config.ID = name
+			config.Owner = owner
+			config.Domain = domain
+			config.Autostart = autostart
+
+			if metadata >= 0 {
+				config.Metadata = map[string]interface{}{}
+				config.Metadata["foobar"] = StringAlphanumeric(metadata * 1024)
 			}
 
 			if _, ok := processes[config.ID]; !ok {
@@ -180,69 +105,12 @@ var processTestCmd = &cobra.Command{
 				delete(processes, config.ID)
 			}
 
-			if thumbs {
-				config := api.ProcessConfig{
-					ID:        name + "_thumb",
-					Owner:     owner,
-					Domain:    "",
-					Type:      "ffmpeg",
-					Reference: name,
-					Input: []api.ProcessConfigIO{
-						{
-							ID:      "in",
-							Address: "{fs:mem}/" + name + ".m3u8",
-							Options: []string{"-re"},
-							Cleanup: []api.ProcessConfigIOCleanup{},
-						},
-					},
-					Output: []api.ProcessConfigIO{
-						{
-							ID:      "jpeg",
-							Address: "{fs:mem}/" + name + ".jpg",
-							Options: []string{
-								"-vframes", "1", "-method", "PUT", "-update", "1",
-							},
-						},
-						{
-							ID:      "jpeg_720",
-							Address: "{fs:mem}/" + name + "_720.jpg",
-							Options: []string{
-								"-vframes", "1", "-vf",
-								"scale=-1:720", "-method", "PUT", "-update", "1",
-							},
-						},
-						{
-							ID:      "jpeg_480",
-							Address: "{fs:mem}/" + name + "_480.jpg",
-							Options: []string{
-								"-vframes", "1", "-vf",
-								"scale=-1:480", "-method", "PUT", "-update", "1",
-							},
-						},
-						{
-							ID:      "jpeg_90",
-							Address: "{fs:mem}/" + name + "_90.jpg",
-							Options: []string{
-								"-vframes", "1", "-vf",
-								"scale=-1:90", "-method", "PUT", "-update", "1",
-							},
-						},
-					},
-					Options:        []string{},
-					Reconnect:      true,
-					ReconnectDelay: 60,
-					Autostart:      true,
-					StaleTimeout:   30,
-					Timeout:        0,
-					Scheduler:      "",
-					LogPatterns:    []string{},
-					Limits: api.ProcessConfigLimits{
-						CPU:     10,
-						Memory:  50,
-						WaitFor: 10,
-					},
-					Metadata: map[string]interface{}{},
-				}
+			if len(thumbs) != 0 {
+				tconfig.ID = name + "_thumb"
+				tconfig.Owner = owner
+				tconfig.Domain = domain
+				tconfig.Autostart = true
+				tconfig.Input[0].Address = "{fs:mem}/" + name + ".m3u8"
 
 				if _, ok := processes[config.ID]; !ok {
 					if !update {
@@ -275,7 +143,7 @@ var processTestCmd = &cobra.Command{
 		fmt.Printf("%4d / %4d deleted\r", 0, n)
 
 		for name := range processes {
-			if err := client.ProcessDelete(coreclient.NewProcessID(name, "")); err != nil {
+			if err := client.ProcessDelete(coreclient.NewProcessID(name, domain)); err != nil {
 				fmt.Printf("\nprocess %s (%4d / %4d) failed: %s\n", name, i+1, n, err.Error())
 			}
 
@@ -293,5 +161,7 @@ func init() {
 	processCmd.AddCommand(processTestCmd)
 
 	processTestCmd.Flags().BoolP("update", "u", false, "Update existing processes")
-	processTestCmd.Flags().BoolP("thumbs", "t", false, "include thumbnail processes")
+	processTestCmd.Flags().StringP("thumbs", "t", "", "template for thumbnail processes")
+	processTestCmd.Flags().BoolP("autostart", "a", true, "autostart processes")
+	processTestCmd.Flags().IntP("metadata", "m", 0, "metadata size")
 }

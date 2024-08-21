@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var clusterProcessTemplateCmd = &cobra.Command{
-	Use:   "template",
+var templateEmptyCmd = &cobra.Command{
+	Use:   "empty",
 	Short: "Print a template for a process config",
 	Long:  "Print a template for a process config.",
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -60,7 +60,7 @@ var clusterProcessTemplateCmd = &cobra.Command{
 }
 
 func init() {
-	clusterProcessCmd.AddCommand(clusterProcessTemplateCmd)
+	templateCmd.AddCommand(templateEmptyCmd)
 
 	// Here you will define your flags and configuration settings.
 

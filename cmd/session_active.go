@@ -10,8 +10,9 @@ import (
 )
 
 type session struct {
-	count   uint64
-	bitrate float64 // mbit/s
+	count      uint64
+	rx_bitrate float64 // mbit/session
+	tx_bitrate float64 // mbit/session
 }
 
 var sessionActiveCmd = &cobra.Command{
@@ -48,31 +49,36 @@ var sessionActiveCmd = &cobra.Command{
 			s := data[sess.Location]
 
 			s.count++
-			s.bitrate += (sess.TxBitrate / 1024)
+			s.rx_bitrate += (sess.RxBitrate / 1024)
+			s.tx_bitrate += (sess.TxBitrate / 1024)
 
 			data[sess.Location] = s
 		}
 
 		t := table.NewWriter()
 
-		t.AppendHeader(table.Row{"Count", "Local", "Bitrate mbit"})
+		t.AppendHeader(table.Row{"Count", "Local", "RX bitrate mbit", "TX bitrate mbit"})
 
-		sumBitrate := 0.0
+		sumRxBitrate := 0.0
+		sumTxBitrate := 0.0
 
 		for l, sess := range data {
 			t.AppendRow(table.Row{
 				fmt.Sprintf("%5d", sess.count),
 				l,
-				sess.bitrate,
+				sess.rx_bitrate,
+				sess.tx_bitrate,
 			})
 
-			sumBitrate += sess.bitrate
+			sumRxBitrate += sess.rx_bitrate
+			sumTxBitrate += sess.tx_bitrate
 		}
 
 		t.AppendFooter(table.Row{
 			fmt.Sprintf("%5d", len(sessions)),
 			"",
-			sumBitrate,
+			sumRxBitrate,
+			sumTxBitrate,
 		})
 
 		t.SetColumnConfigs([]table.ColumnConfig{
@@ -103,14 +109,4 @@ var sessionActiveCmd = &cobra.Command{
 
 func init() {
 	sessionCmd.AddCommand(sessionActiveCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	//processCmd.PersistentFlags().Bool("raw", false, "Display raw result from the API as JSON")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// processCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

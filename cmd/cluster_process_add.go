@@ -24,12 +24,24 @@ var clusterProcessAddCmd = &cobra.Command{
 		var data []byte
 		var err error
 
-		if len(processid) == 0 {
-			fromFile, _ := cmd.Flags().GetString("from-file")
-			if len(fromFile) == 0 {
-				return fmt.Errorf("no process configuration file provided")
+		fromFile, _ := cmd.Flags().GetString("from-file")
+		fromTemplate, _ := cmd.Flags().GetString("from-template")
+
+		if len(fromTemplate) != 0 {
+			config, err := loadTemplate(fromTemplate)
+			if err != nil {
+				return fmt.Errorf("loading from template: %w", err)
 			}
 
+			if len(processid) != 0 {
+				config.ID = processid
+			}
+
+			data, err = json.MarshalIndent(config, "", "   ")
+			if err != nil {
+				return err
+			}
+		} else if len(fromFile) != 0 {
 			reader := os.Stdin
 
 			if fromFile != "-" {
@@ -46,7 +58,7 @@ var clusterProcessAddCmd = &cobra.Command{
 				return err
 			}
 		} else {
-			user := api.ProcessConfig{
+			config := api.ProcessConfig{
 				ID:   processid,
 				Type: "ffmpeg",
 				Input: []api.ProcessConfigIO{
@@ -66,15 +78,15 @@ var clusterProcessAddCmd = &cobra.Command{
 				Metadata:    map[string]interface{}{},
 			}
 
-			data, err = json.MarshalIndent(user, "", "   ")
+			data, err = json.MarshalIndent(config, "", "   ")
 			if err != nil {
 				return err
 			}
+		}
 
-			data, _, err = editData(data)
-			if err != nil {
-				return err
-			}
+		data, _, err = editData(data)
+		if err != nil {
+			return err
 		}
 
 		config := api.ProcessConfig{}
@@ -96,4 +108,5 @@ func init() {
 	clusterProcessCmd.AddCommand(clusterProcessAddCmd)
 
 	clusterProcessAddCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
+	clusterProcessAddCmd.Flags().String("from-template", "", "Load process config from template")
 }

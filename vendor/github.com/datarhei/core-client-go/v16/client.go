@@ -138,8 +138,8 @@ type RestClient interface {
 	ClusterFilesystemList(name, pattern, sort, order string) ([]api.FileInfo, error) // GET /v3/cluster/fs/{storage}
 
 	ClusterProcessList(opts ProcessListOptions) ([]api.Process, error)                    // GET /v3/cluster/process
-	ClusterProcess(id ProcessID, filter []string) (api.Process, error)                    // POST /v3/cluster/process
-	ClusterProcessAdd(p api.ProcessConfig) error                                          // GET /v3/cluster/process/{id}
+	ClusterProcess(id ProcessID, filter []string) (api.Process, error)                    // GET /v3/cluster/process/{id}
+	ClusterProcessAdd(p api.ProcessConfig) error                                          // POST /v3/cluster/process
 	ClusterProcessUpdate(id ProcessID, p api.ProcessConfig) error                         // PUT /v3/cluster/process/{id}
 	ClusterProcessDelete(id ProcessID) error                                              // DELETE /v3/cluster/process/{id}
 	ClusterProcessCommand(id ProcessID, command string) error                             // PUT /v3/cluster/process/{id}/command

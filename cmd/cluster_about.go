@@ -74,7 +74,7 @@ var clusterAboutCmd = &cobra.Command{
 			t = table.NewWriter()
 		}
 
-		t.AppendHeader(table.Row{"ID", "Name", "Version", "Uptime", "Last Contact", "Status", "Role", "Core Version", "CPU", "Memory", "Throttling", "Error"})
+		t.AppendHeader(table.Row{"ID", "Name", "Version", "Uptime", "Last Contact", "Status", "Role", "Core Version", "CPU (Real, Core)", "Memory (Real, Core)", "Throttling", "Error"})
 
 		for _, n := range about.Nodes {
 			role := "follower"
@@ -82,12 +82,16 @@ var clusterAboutCmd = &cobra.Command{
 				role = "leader"
 			}
 
-			cpuusage := 0.0
+			realcpuusage := n.Resources.CPU / n.Resources.NCPU
+			cpuusage := realcpuusage
+			corecpuusage := n.Resources.CPUCore / n.Resources.NCPU
 			if n.Resources.CPULimit != 0 {
 				cpuusage = n.Resources.CPU / n.Resources.CPULimit * 100
 			}
 
-			memoryusage := 0.0
+			realmemoryusage := float64(n.Resources.Mem) / float64(n.Resources.MemTotal) * 100
+			memoryusage := realcpuusage
+			corememusage := n.Resources.MemCore
 			if n.Resources.MemLimit != 0 {
 				memoryusage = float64(n.Resources.Mem) / float64(n.Resources.MemLimit) * 100
 			}
@@ -102,12 +106,12 @@ var clusterAboutCmd = &cobra.Command{
 				n.Name,
 				n.Version,
 				(time.Duration(n.Uptime) * time.Second).String(),
-				(time.Duration(n.LastContact) * time.Millisecond).String(),
+				fmt.Sprintf("%s (%s)", (time.Duration(n.LastContact) * time.Millisecond).String(), (time.Duration(n.Latency) * time.Millisecond).String()),
 				n.Status,
 				role,
 				n.Core.Version,
-				fmt.Sprintf("%.1f%%", cpuusage),
-				fmt.Sprintf("%.1f%%", memoryusage),
+				fmt.Sprintf("%5.1f%% (%5.1f%%, %5.1f%%)", cpuusage, realcpuusage, corecpuusage),
+				fmt.Sprintf("%5.1f%% (%5.1f%%, %s)", memoryusage, realmemoryusage, formatByteCountBinary(corememusage)),
 				fmt.Sprintf("%v", n.Resources.IsThrottling),
 				n.Error,
 			})
@@ -121,6 +125,8 @@ var clusterAboutCmd = &cobra.Command{
 			{Number: 7, Align: text.AlignRight},
 			{Number: 8, Align: text.AlignRight},
 			{Number: 9, Align: text.AlignRight},
+			{Number: 10, Align: text.AlignRight},
+			{Number: 11, Align: text.AlignRight},
 		})
 
 		t.SortBy([]table.SortBy{

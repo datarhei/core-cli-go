@@ -43,31 +43,36 @@ var sessionCmd = &cobra.Command{
 			s := data[sess.Location]
 
 			s.count++
-			s.bitrate += (sess.TxBitrate / 1024)
+			s.rx_bitrate += (sess.RxBitrate / 1024)
+			s.tx_bitrate += (sess.TxBitrate / 1024)
 
 			data[sess.Location] = s
 		}
 
 		t := table.NewWriter()
 
-		t.AppendHeader(table.Row{"Count", "Local", "Bitrate mbit"})
+		t.AppendHeader(table.Row{"Count", "Local", "RX bitrate mbit", "TX bitrate mbit"})
 
-		sumBitrate := 0.0
+		sumRxBitrate := 0.0
+		sumTxBitrate := 0.0
 
 		for l, sess := range data {
 			t.AppendRow(table.Row{
 				fmt.Sprintf("%5d", sess.count),
 				l,
-				sess.bitrate,
+				sess.rx_bitrate,
+				sess.tx_bitrate,
 			})
 
-			sumBitrate += sess.bitrate
+			sumRxBitrate += sess.rx_bitrate
+			sumTxBitrate += sess.tx_bitrate
 		}
 
 		t.AppendFooter(table.Row{
 			fmt.Sprintf("%5d", len(sessions.Active.SessionList)),
 			"",
-			sumBitrate,
+			sumRxBitrate,
+			sumTxBitrate,
 		})
 
 		t.SetColumnConfigs([]table.ColumnConfig{

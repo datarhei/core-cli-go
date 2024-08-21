@@ -1,8 +1,29 @@
 package api
 
+import "strings"
+
 type ProcessID struct {
 	ID     string `json:"id"`
 	Domain string `json:"domain"`
+}
+
+func ParseProcessID(name string) ProcessID {
+	p := ProcessID{}
+
+	p.Parse(name)
+
+	return p
+}
+
+func (p *ProcessID) Parse(pid string) {
+	i := strings.LastIndex(pid, "@")
+	if i == -1 {
+		p.ID = pid
+		p.Domain = ""
+	}
+
+	p.ID = pid[:i]
+	p.Domain = pid[i+1:]
 }
 
 // Process represents all information on a process
