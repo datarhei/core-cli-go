@@ -6,6 +6,7 @@ type Event struct {
 	Component string `json:"event"`
 	Message   string `json:"message"`
 	Caller    string `json:"caller"`
+	CoreID    string `json:"core_id"`
 
 	Data map[string]string `json:"data"`
 }
@@ -14,6 +15,8 @@ type EventFilter struct {
 	Component string            `json:"event"`
 	Message   string            `json:"message"`
 	Level     string            `json:"level"`
+	Caller    string            `json:"caller"`
+	CoreID    string            `json:"core_id"`
 	Data      map[string]string `json:"data"`
 }
 

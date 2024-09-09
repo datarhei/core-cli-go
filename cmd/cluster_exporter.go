@@ -16,8 +16,10 @@ import (
 )
 
 type clusterHLSSessionCollector struct {
-	client coreclient.RestClient
-	node   string
+	client   coreclient.RestClient
+	node     string
+	tx_bytes uint64
+	last     map[string]uint64
 
 	hlsSessionsDesc      *prometheus.Desc
 	hlsSessionsBytesDesc *prometheus.Desc
@@ -25,8 +27,10 @@ type clusterHLSSessionCollector struct {
 
 func newClusterHLSSessionCollector(client coreclient.RestClient, node string) prometheus.Collector {
 	return &clusterHLSSessionCollector{
-		client: client,
-		node:   node,
+		client:   client,
+		node:     node,
+		tx_bytes: 0,
+		last:     map[string]uint64{},
 		hlsSessionsDesc: prometheus.NewDesc(
 			"cluster_node_hls_sessions",
 			"Cluster node HLS sessions",
@@ -51,14 +55,24 @@ func (c *clusterHLSSessionCollector) Collect(ch chan<- prometheus.Metric) {
 
 	sessions := list["hls"]
 
-	bytes := sessions.Summary.TotalTxBytes * 1024 * 1024
+	check := map[string]struct{}{}
+
+	for id := range c.last {
+		check[id] = struct{}{}
+	}
 
 	for _, sess := range sessions.Active.SessionList {
-		bytes += sess.TxBytes
+		c.tx_bytes += sess.TxBytes - c.last[sess.ID]
+		c.last[sess.ID] = sess.TxBytes
+		delete(check, sess.ID)
+	}
+
+	for id := range check {
+		delete(c.last, id)
 	}
 
 	ch <- prometheus.MustNewConstMetric(c.hlsSessionsDesc, prometheus.GaugeValue, float64(len(sessions.Active.SessionList)), c.node)
-	ch <- prometheus.MustNewConstMetric(c.hlsSessionsBytesDesc, prometheus.CounterValue, float64(bytes), c.node)
+	ch <- prometheus.MustNewConstMetric(c.hlsSessionsBytesDesc, prometheus.CounterValue, float64(c.tx_bytes), c.node)
 }
 
 type clusterNodeCollector struct {
@@ -66,9 +80,11 @@ type clusterNodeCollector struct {
 
 	cpuLimitDesc   *prometheus.Desc
 	cpuCurrentDesc *prometheus.Desc
-	cpuCoresDesc   *prometheus.Desc
+	cpuNCoresDesc  *prometheus.Desc
+	cpuCoreDesc    *prometheus.Desc
 	memLimitDesc   *prometheus.Desc
 	memCurrentDesc *prometheus.Desc
+	memCoreDesc    *prometheus.Desc
 	throttlingDesc *prometheus.Desc
 	degradedDesc   *prometheus.Desc
 }
@@ -84,9 +100,13 @@ func newClusterNodeCollector(client coreclient.RestClient) prometheus.Collector 
 			"cluster_node_cpu_current_percent",
 			"Cluster node CPU current in percent",
 			[]string{"node"}, nil),
-		cpuCoresDesc: prometheus.NewDesc(
+		cpuNCoresDesc: prometheus.NewDesc(
 			"cluster_node_cpu_cores",
 			"Cluster node CPU cores",
+			[]string{"node"}, nil),
+		cpuCoreDesc: prometheus.NewDesc(
+			"cluster_core_cpu_current_percent",
+			"Cluster core CPU current in percent",
 			[]string{"node"}, nil),
 		memLimitDesc: prometheus.NewDesc(
 			"cluster_node_mem_limit_bytes",
@@ -95,6 +115,10 @@ func newClusterNodeCollector(client coreclient.RestClient) prometheus.Collector 
 		memCurrentDesc: prometheus.NewDesc(
 			"cluster_node_mem_current_bytes",
 			"Cluster node memory current in bytes",
+			[]string{"node"}, nil),
+		memCoreDesc: prometheus.NewDesc(
+			"cluster_core_mem_current_bytes",
+			"Cluster core memory current in bytes",
 			[]string{"node"}, nil),
 		throttlingDesc: prometheus.NewDesc(
 			"cluster_node_throttling",
@@ -110,9 +134,11 @@ func newClusterNodeCollector(client coreclient.RestClient) prometheus.Collector 
 func (c *clusterNodeCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.cpuLimitDesc
 	ch <- c.cpuCurrentDesc
-	ch <- c.cpuCoresDesc
+	ch <- c.cpuNCoresDesc
+	ch <- c.cpuCoreDesc
 	ch <- c.memLimitDesc
 	ch <- c.memCurrentDesc
+	ch <- c.memCoreDesc
 	ch <- c.throttlingDesc
 	ch <- c.degradedDesc
 }
@@ -145,9 +171,11 @@ func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
 
 		ch <- prometheus.MustNewConstMetric(c.cpuLimitDesc, prometheus.GaugeValue, node.Resources.CPULimit, node.ID)
 		ch <- prometheus.MustNewConstMetric(c.cpuCurrentDesc, prometheus.GaugeValue, node.Resources.CPU, node.ID)
-		ch <- prometheus.MustNewConstMetric(c.cpuCoresDesc, prometheus.GaugeValue, node.Resources.NCPU, node.ID)
+		ch <- prometheus.MustNewConstMetric(c.cpuNCoresDesc, prometheus.GaugeValue, node.Resources.NCPU, node.ID)
+		ch <- prometheus.MustNewConstMetric(c.cpuCoreDesc, prometheus.GaugeValue, node.Resources.CPUCore, node.ID)
 		ch <- prometheus.MustNewConstMetric(c.memLimitDesc, prometheus.GaugeValue, float64(node.Resources.MemLimit), node.ID)
 		ch <- prometheus.MustNewConstMetric(c.memCurrentDesc, prometheus.GaugeValue, float64(node.Resources.Mem), node.ID)
+		ch <- prometheus.MustNewConstMetric(c.memCoreDesc, prometheus.GaugeValue, float64(node.Resources.MemCore), node.ID)
 		ch <- prometheus.MustNewConstMetric(c.throttlingDesc, prometheus.GaugeValue, throttling, node.ID)
 
 		break

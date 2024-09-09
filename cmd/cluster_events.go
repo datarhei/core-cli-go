@@ -4,15 +4,13 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"strings"
 
 	"github.com/datarhei/core-client-go/v16/api"
 
 	"github.com/spf13/cobra"
 )
 
-// eventsCmd represents the metrics command
-var eventsCmd = &cobra.Command{
+var clusterEventsCmd = &cobra.Command{
 	Use:   "events [component [key=value] [key=value] ...] ; [component [key=value] ...]",
 	Short: "Retrieve events",
 	Long:  "Retrieve events",
@@ -42,7 +40,7 @@ var eventsCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		events, err := client.Events(ctx, filters)
+		events, err := client.ClusterEvents(ctx, filters)
 		if err != nil {
 			return err
 		}
@@ -74,52 +72,6 @@ var eventsCmd = &cobra.Command{
 	},
 }
 
-func parseFilter(args []string) ([]string, api.EventFilter, bool) {
-	if len(args) == 0 {
-		return nil, api.EventFilter{}, true
-	}
-
-	filter := api.EventFilter{
-		Component: args[0],
-		Data:      map[string]string{},
-	}
-
-	for i, arg := range args[1:] {
-		if arg == ";" {
-			return args[i+2:], filter, false
-		}
-
-		key, value, found := strings.Cut(arg, "=")
-		if !found {
-			continue
-		}
-
-		if key == "level" {
-			filter.Level = value
-			continue
-		}
-
-		if key == "message" {
-			filter.Message = value
-			continue
-		}
-
-		if key == "caller" {
-			filter.Caller = value
-			continue
-		}
-
-		if key == "core_id" {
-			filter.CoreID = value
-			continue
-		}
-
-		filter.Data[key] = value
-	}
-
-	return nil, filter, false
-}
-
 func init() {
-	rootCmd.AddCommand(eventsCmd)
+	clusterCmd.AddCommand(clusterEventsCmd)
 }

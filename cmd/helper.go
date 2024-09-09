@@ -303,6 +303,18 @@ func formatJSON(d interface{}, useColor bool) (string, error) {
 }
 
 func writeJSON(w io.Writer, d interface{}, useColor bool) error {
+	color := useColor
+
+	if color {
+		if w, ok := w.(*os.File); ok {
+			if !isatty.IsTerminal(w.Fd()) && !isatty.IsCygwinTerminal(w.Fd()) {
+				color = false
+			}
+		} else {
+			color = false
+		}
+	}
+
 	if len(globalFlagJq) != 0 {
 		query, err := gojq.Parse(globalFlagJq)
 		if err != nil {
@@ -330,22 +342,11 @@ func writeJSON(w io.Writer, d interface{}, useColor bool) error {
 			if err, ok := v.(error); ok {
 				return err
 			}
-			fmt.Printf("%#v\n", v)
+			j, _ := formatJSON(v, color)
+			fmt.Printf("%s", j)
 		}
 
 		return nil
-	}
-
-	color := useColor
-
-	if color {
-		if w, ok := w.(*os.File); ok {
-			if !isatty.IsTerminal(w.Fd()) && !isatty.IsCygwinTerminal(w.Fd()) {
-				color = false
-			}
-		} else {
-			color = false
-		}
 	}
 
 	data, err := formatJSON(d, color)

@@ -158,6 +158,8 @@ type RestClient interface {
 	ClusterIdentityDelete(name string) error                         // DELETE /v3/cluster/iam/user/{name}
 	ClusterIAMReload() error                                         // PUT /v3/cluster/iam/reload
 
+	ClusterEvents(ctx context.Context, filters api.EventFilters) (<-chan api.Event, error) // POST /v3/cluster/events
+
 	RTMPChannels() ([]api.RTMPChannel, error) // GET /v3/rtmp
 	SRTChannels() ([]api.SRTChannel, error)   // GET /v3/srt
 	SRTChannelsRaw() ([]byte, error)          // GET /v3/srt

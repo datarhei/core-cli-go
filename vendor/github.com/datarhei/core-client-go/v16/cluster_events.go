@@ -11,7 +11,7 @@ import (
 	"github.com/goccy/go-json"
 )
 
-func (r *restclient) Events(ctx context.Context, filters api.EventFilters) (<-chan api.Event, error) {
+func (r *restclient) ClusterEvents(ctx context.Context, filters api.EventFilters) (<-chan api.Event, error) {
 	var buf bytes.Buffer
 
 	e := json.NewEncoder(&buf)
@@ -19,9 +19,8 @@ func (r *restclient) Events(ctx context.Context, filters api.EventFilters) (<-ch
 
 	header := make(http.Header)
 	header.Set("Accept", "application/x-json-stream")
-	header.Set("Connection", "close")
 
-	stream, err := r.stream(ctx, "POST", "/v3/events", nil, header, "application/json", &buf)
+	stream, err := r.stream(ctx, "POST", "/v3/cluster/events", nil, header, "application/json", &buf)
 	if err != nil {
 		return nil, err
 	}

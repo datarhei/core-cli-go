@@ -111,7 +111,7 @@ var clusterAboutCmd = &cobra.Command{
 				role,
 				n.Core.Version,
 				fmt.Sprintf("%5.1f%% (%5.1f%%, %5.1f%%)", cpuusage, realcpuusage, corecpuusage),
-				fmt.Sprintf("%5.1f%% (%5.1f%%, %s)", memoryusage, realmemoryusage, formatByteCountBinary(corememusage)),
+				fmt.Sprintf("%5.1f%% (%5.1f%%, %8s)", memoryusage, realmemoryusage, formatByteCountBinary(corememusage)),
 				fmt.Sprintf("%v", n.Resources.IsThrottling),
 				n.Error,
 			})

@@ -107,6 +107,6 @@ var clusterProcessAddCmd = &cobra.Command{
 func init() {
 	clusterProcessCmd.AddCommand(clusterProcessAddCmd)
 
-	clusterProcessAddCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
+	clusterProcessAddCmd.Flags().String("from-file", "", "Load process config from file or stdin")
 	clusterProcessAddCmd.Flags().String("from-template", "", "Load process config from template")
 }
