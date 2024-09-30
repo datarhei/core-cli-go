@@ -13,8 +13,8 @@ import (
 
 var clusterProcessEditCmd = &cobra.Command{
 	Use:   "edit [processid]",
-	Short: "Edit process config",
-	Long:  "Edit the config of a process",
+	Short: "Edit the config of the process with the given ID",
+	Long:  "Edit the config of the process with the given ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pid := args[0]

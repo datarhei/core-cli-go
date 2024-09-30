@@ -12,8 +12,8 @@ import (
 // processTestCmd represents the process command
 var clusterProcessTestCmd = &cobra.Command{
 	Use:   "test [template] [number of processes] [owner] [domain]?",
-	Short: "Process test",
-	Long:  "Process test",
+	Short: "Create processes for load testing",
+	Long:  "Create processes for load testing",
 	Args:  cobra.RangeArgs(3, 4),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		template := args[0]

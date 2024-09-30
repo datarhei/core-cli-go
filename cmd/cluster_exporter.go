@@ -193,9 +193,11 @@ type clusterProcessCollector struct {
 	client coreclient.RestClient
 	node   string
 
-	processDesc           *prometheus.Desc
-	processInputFPSDesc   *prometheus.Desc
-	processInputSpeedDesc *prometheus.Desc
+	processDesc             *prometheus.Desc
+	processResourcesCPUDesc *prometheus.Desc
+	processResourcesMemDesc *prometheus.Desc
+	processInputFPSDesc     *prometheus.Desc
+	processInputSpeedDesc   *prometheus.Desc
 }
 
 func newClusterProcessCollector(client coreclient.RestClient, node string) prometheus.Collector {
@@ -206,6 +208,14 @@ func newClusterProcessCollector(client coreclient.RestClient, node string) prome
 			"cluster_process",
 			"Cluster processes by state",
 			[]string{"node", "state"}, nil),
+		processResourcesCPUDesc: prometheus.NewDesc(
+			"cluster_process_resources_cpu",
+			"Cluster process CPU consumption by id",
+			[]string{"node", "id"}, nil),
+		processResourcesMemDesc: prometheus.NewDesc(
+			"cluster_process_resources_mem",
+			"Cluster process memory consumption by id",
+			[]string{"node", "id"}, nil),
 		processInputFPSDesc: prometheus.NewDesc(
 			"cluster_process_input_fps",
 			"Cluster process input FPS by id and input",
@@ -219,6 +229,8 @@ func newClusterProcessCollector(client coreclient.RestClient, node string) prome
 
 func (c *clusterProcessCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.processDesc
+	ch <- c.processResourcesCPUDesc
+	ch <- c.processResourcesMemDesc
 	ch <- c.processInputFPSDesc
 	ch <- c.processInputSpeedDesc
 }
@@ -247,6 +259,9 @@ func (c *clusterProcessCollector) Collect(ch chan<- prometheus.Metric) {
 		if !strings.HasSuffix(p.ID, ":main") {
 			continue
 		}
+
+		ch <- prometheus.MustNewConstMetric(c.processResourcesCPUDesc, prometheus.GaugeValue, p.State.Resources.CPU.Current, c.node, p.ID)
+		ch <- prometheus.MustNewConstMetric(c.processResourcesMemDesc, prometheus.GaugeValue, float64(p.State.Resources.Memory.Current), c.node, p.ID)
 
 		for _, input := range p.State.Progress.Input {
 			if input.Type != "video" {

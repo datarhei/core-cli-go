@@ -8,8 +8,8 @@ import (
 
 var clusterProcessRelocateCmd = &cobra.Command{
 	Use:   "relocate [processid] [targetnode]?",
-	Short: "Move the process to a different node",
-	Long:  "Move the process to a different node",
+	Short: "Move the process with the given ID to a different node",
+	Long:  "Move the process with the given ID to a different node",
 	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pid := args[0]
