@@ -376,6 +376,124 @@ func (c *clusterHTTPStatusCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+type clusterBufferpoolCollector struct {
+	client coreclient.RestClient
+	node   string
+
+	allocDesc       *prometheus.Desc
+	reuseDesc       *prometheus.Desc
+	recycleDesc     *prometheus.Desc
+	dumpDesc        *prometheus.Desc
+	defaultSizeDesc *prometheus.Desc
+	maxSizeDesc     *prometheus.Desc
+}
+
+func newClusterBufferpoolCollector(client coreclient.RestClient, node string) prometheus.Collector {
+	return &clusterBufferpoolCollector{
+		client: client,
+		node:   node,
+		allocDesc: prometheus.NewDesc(
+			"cluster_bufferpool_alloc",
+			"Cluster bufferpool allocations",
+			[]string{"node"}, nil),
+		reuseDesc: prometheus.NewDesc(
+			"cluster_bufferpool_reuse",
+			"Cluster bufferpool reuses of an already allocated buffer",
+			[]string{"node"}, nil),
+		recycleDesc: prometheus.NewDesc(
+			"cluster_bufferpool_recycle",
+			"Cluster bufferpool recycling a buffer",
+			[]string{"node"}, nil),
+		dumpDesc: prometheus.NewDesc(
+			"cluster_bufferpool_dump",
+			"Cluster bufferpool throwing away a buffer",
+			[]string{"node"}, nil),
+		defaultSizeDesc: prometheus.NewDesc(
+			"cluster_bufferpool_default_size_bytes",
+			"Cluster bufferpool min. size of a buffer on allocation",
+			[]string{"node"}, nil),
+		maxSizeDesc: prometheus.NewDesc(
+			"cluster_bufferpool_max_size_bytes",
+			"Cluster bufferpool max. size of a buffer in order the get recycled",
+			[]string{"node"}, nil),
+	}
+}
+
+func (c *clusterBufferpoolCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- c.allocDesc
+	ch <- c.reuseDesc
+	ch <- c.recycleDesc
+	ch <- c.dumpDesc
+	ch <- c.defaultSizeDesc
+	ch <- c.maxSizeDesc
+}
+
+func (c *clusterBufferpoolCollector) Collect(ch chan<- prometheus.Metric) {
+	query := api.MetricsQuery{
+		Metrics: []api.MetricsQueryMetric{
+			{
+				Name:   "self_bufferpool_alloc",
+				Labels: map[string]string{},
+			},
+			{
+				Name:   "self_bufferpool_reuse",
+				Labels: map[string]string{},
+			},
+			{
+				Name:   "self_bufferpool_recycle",
+				Labels: map[string]string{},
+			},
+			{
+				Name:   "self_bufferpool_dump",
+				Labels: map[string]string{},
+			},
+			{
+				Name:   "self_bufferpool_default_size",
+				Labels: map[string]string{},
+			},
+			{
+				Name:   "self_bufferpool_max_size",
+				Labels: map[string]string{},
+			},
+		},
+	}
+
+	resp, err := c.client.Metrics(query)
+	if err != nil {
+		return
+	}
+
+	var desc *prometheus.Desc
+	var vtype prometheus.ValueType
+
+	for _, m := range resp.Metrics {
+		switch m.Name {
+		case "self_bufferpool_alloc":
+			desc = c.allocDesc
+			vtype = prometheus.CounterValue
+		case "self_bufferpool_reuse":
+			desc = c.reuseDesc
+			vtype = prometheus.CounterValue
+		case "self_bufferpool_recycle":
+			desc = c.recycleDesc
+			vtype = prometheus.CounterValue
+		case "self_bufferpool_dump":
+			desc = c.dumpDesc
+			vtype = prometheus.CounterValue
+		case "self_bufferpool_default_size":
+			desc = c.defaultSizeDesc
+			vtype = prometheus.GaugeValue
+		case "self_bufferpool_max_size":
+			desc = c.maxSizeDesc
+			vtype = prometheus.GaugeValue
+		default:
+			continue
+		}
+
+		ch <- prometheus.MustNewConstMetric(desc, vtype, m.Values[0].Value, c.node)
+	}
+}
+
 var clusterExporterCmd = &cobra.Command{
 	Use:   "exporter [clustername] [listenaddress]",
 	Short: "Cluster exporter related commands",
@@ -408,6 +526,7 @@ var clusterExporterCmd = &cobra.Command{
 		processCollector := newClusterProcessCollector(client, coreabout.ID)
 		filesCollector := newClusterFilesCollector(client, coreabout.ID, "mem")
 		statusCollector := newClusterHTTPStatusCollector(client, coreabout.ID)
+		bufferpoolCollector := newClusterBufferpoolCollector(client, coreabout.ID)
 
 		registry := prometheus.NewRegistry()
 
@@ -416,6 +535,7 @@ var clusterExporterCmd = &cobra.Command{
 		registry.Register(processCollector)
 		registry.Register(filesCollector)
 		registry.Register(statusCollector)
+		registry.Register(bufferpoolCollector)
 
 		http.Handle("/metrics", promhttp.InstrumentMetricHandler(registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{})))
 
