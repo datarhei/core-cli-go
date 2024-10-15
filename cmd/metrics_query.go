@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"slices"
 
 	"github.com/datarhei/core-client-go/v16/api"
@@ -15,6 +16,8 @@ var metricsQueryCmd = &cobra.Command{
 	Long:  "Query one or more metrics",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		asRaw, _ := cmd.Flags().GetBool("raw")
+
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
@@ -31,9 +34,23 @@ var metricsQueryCmd = &cobra.Command{
 			})
 		}
 
+		if asRaw {
+			if err := writeJSON(os.Stdout, query, true); err != nil {
+				return err
+			}
+		}
+
 		resp, err := client.Metrics(query)
 		if err != nil {
 			return fmt.Errorf("querying metrics failed: %w", err)
+		}
+
+		if asRaw {
+			if err := writeJSON(os.Stdout, resp, true); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		metrics := map[string][]api.MetricsResponseMetric{}

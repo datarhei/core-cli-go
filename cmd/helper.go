@@ -342,8 +342,13 @@ func writeJSON(w io.Writer, d interface{}, useColor bool) error {
 			if err, ok := v.(error); ok {
 				return err
 			}
-			j, _ := formatJSON(v, color)
-			fmt.Printf("%s", j)
+			switch x := v.(type) {
+			case string:
+				fmt.Printf("%s\n", x)
+			default:
+				j, _ := formatJSON(v, color)
+				fmt.Printf("%s", j)
+			}
 		}
 
 		return nil

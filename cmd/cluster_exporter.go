@@ -334,6 +334,48 @@ func (c *clusterFilesCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(c.filesCollisionsDesc, prometheus.GaugeValue, ncollisions, c.node, c.storage)
 }
 
+type clusterHTTPStatusCollector struct {
+	client coreclient.RestClient
+	node   string
+
+	statusDesc *prometheus.Desc
+}
+
+func newClusterHTTPStatusCollector(client coreclient.RestClient, node string) prometheus.Collector {
+	return &clusterHTTPStatusCollector{
+		client: client,
+		node:   node,
+		statusDesc: prometheus.NewDesc(
+			"cluster_http_request_count",
+			"Cluster HTTP requests by status, method, and path",
+			[]string{"node", "status", "method", "path"}, nil),
+	}
+}
+
+func (c *clusterHTTPStatusCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- c.statusDesc
+}
+
+func (c *clusterHTTPStatusCollector) Collect(ch chan<- prometheus.Metric) {
+	query := api.MetricsQuery{
+		Metrics: []api.MetricsQueryMetric{
+			{
+				Name:   "http_status",
+				Labels: map[string]string{},
+			},
+		},
+	}
+
+	resp, err := c.client.Metrics(query)
+	if err != nil {
+		return
+	}
+
+	for _, m := range resp.Metrics {
+		ch <- prometheus.MustNewConstMetric(c.statusDesc, prometheus.CounterValue, m.Values[0].Value, c.node, m.Labels["code"], m.Labels["method"], m.Labels["path"])
+	}
+}
+
 var clusterExporterCmd = &cobra.Command{
 	Use:   "exporter [clustername] [listenaddress]",
 	Short: "Cluster exporter related commands",
@@ -365,6 +407,7 @@ var clusterExporterCmd = &cobra.Command{
 		sessionCollector := newClusterHLSSessionCollector(client, coreabout.ID)
 		processCollector := newClusterProcessCollector(client, coreabout.ID)
 		filesCollector := newClusterFilesCollector(client, coreabout.ID, "mem")
+		statusCollector := newClusterHTTPStatusCollector(client, coreabout.ID)
 
 		registry := prometheus.NewRegistry()
 
@@ -372,6 +415,7 @@ var clusterExporterCmd = &cobra.Command{
 		registry.Register(sessionCollector)
 		registry.Register(processCollector)
 		registry.Register(filesCollector)
+		registry.Register(statusCollector)
 
 		http.Handle("/metrics", promhttp.InstrumentMetricHandler(registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{})))
 

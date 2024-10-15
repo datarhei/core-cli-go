@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
@@ -16,6 +17,8 @@ var clusterFsListCmd = &cobra.Command{
 	Long:  "List files on filesystem",
 	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		asRaw, _ := cmd.Flags().GetBool("raw")
+
 		name := args[0]
 		pattern := ""
 		if len(args) == 2 {
@@ -35,6 +38,14 @@ var clusterFsListCmd = &cobra.Command{
 		list, err := client.ClusterFilesystemList(name, pattern, sort, order)
 		if err != nil {
 			return err
+		}
+
+		if asRaw {
+			if err := writeJSON(os.Stdout, list, true); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		if len(target) != 0 {

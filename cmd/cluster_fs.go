@@ -20,7 +20,7 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	//processCmd.PersistentFlags().Bool("raw", false, "Display raw result from the API as JSON")
+	clusterFilesystemCmd.PersistentFlags().Bool("raw", false, "Display raw result from the API as JSON")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
