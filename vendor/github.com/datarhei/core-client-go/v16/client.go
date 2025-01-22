@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
 
 	"github.com/datarhei/core-client-go/v16/api"
 
@@ -99,6 +99,7 @@ type RestClient interface {
 	ProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error // PUT /v3/process/{id}/metadata/{key}
 
 	PlayoutStatus(id ProcessID, inputID string) (api.PlayoutStatus, error) // GET /v3/process/{id}/playout/{inputid}/status
+	PlayoutReopen(id ProcessID, inputID string) (bool, error)              // GET /v3/process/{id}/playout/{inputid}/reopen
 
 	IdentitiesList() ([]api.IAMUser, error)                   // GET /v3/iam/user
 	Identity(name string) (api.IAMUser, error)                // GET /v3/iam/user/{name}
@@ -447,7 +448,8 @@ func New(config Config) (RestClient, error) {
 			{
 				path:       mustNewGlob("/v3/cluster/db/map/process"),
 				constraint: mustNewConstraint("^16.14.0"),
-			}, {
+			},
+			{
 				path:       mustNewGlob("/v3/cluster/node/*/fs/*"),
 				constraint: mustNewConstraint("^16.14.0"),
 			},

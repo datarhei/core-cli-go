@@ -31,7 +31,7 @@ var processCommandCmd = &cobra.Command{
 		}
 
 		for _, e := range state.Command {
-			if strings.ContainsAny(e, " $") {
+			if strings.ContainsAny(e, " $?[]") {
 				fmt.Printf("'%s' ", e)
 			} else {
 				fmt.Printf("%s ", e)

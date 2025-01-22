@@ -2,10 +2,9 @@ package coreclient
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/url"
 	"strings"
-
-	"github.com/goccy/go-json"
 
 	"github.com/datarhei/core-client-go/v16/api"
 )
@@ -98,6 +97,8 @@ func (r *restclient) process(where string, id ProcessID, filter []string) (api.P
 	if err != nil {
 		return info, err
 	}
+
+	data = bytes.TrimSpace(data)
 
 	err = json.Unmarshal(data, &info)
 

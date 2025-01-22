@@ -78,15 +78,21 @@ func (c *clusterHLSSessionCollector) Collect(ch chan<- prometheus.Metric) {
 type clusterNodeCollector struct {
 	client coreclient.RestClient
 
-	cpuLimitDesc   *prometheus.Desc
-	cpuCurrentDesc *prometheus.Desc
-	cpuNCoresDesc  *prometheus.Desc
-	cpuCoreDesc    *prometheus.Desc
-	memLimitDesc   *prometheus.Desc
-	memCurrentDesc *prometheus.Desc
-	memCoreDesc    *prometheus.Desc
-	throttlingDesc *prometheus.Desc
-	degradedDesc   *prometheus.Desc
+	cpuLimitDesc      *prometheus.Desc
+	cpuCurrentDesc    *prometheus.Desc
+	cpuNCoresDesc     *prometheus.Desc
+	cpuCoreDesc       *prometheus.Desc
+	memLimitDesc      *prometheus.Desc
+	memCurrentDesc    *prometheus.Desc
+	memCoreDesc       *prometheus.Desc
+	throttlingDesc    *prometheus.Desc
+	degradedDesc      *prometheus.Desc
+	gpuLimitDesc      *prometheus.Desc
+	gpuGeneralDesc    *prometheus.Desc
+	gpuDecoderDesc    *prometheus.Desc
+	gpuEncoderDesc    *prometheus.Desc
+	gpuMemLimitDesc   *prometheus.Desc
+	gpuMemCurrentDesc *prometheus.Desc
 }
 
 func newClusterNodeCollector(client coreclient.RestClient) prometheus.Collector {
@@ -128,6 +134,30 @@ func newClusterNodeCollector(client coreclient.RestClient) prometheus.Collector 
 			"cluster_node_degraded",
 			"Cluster node degraded",
 			[]string{"node"}, nil),
+		gpuLimitDesc: prometheus.NewDesc(
+			"cluster_node_gpu_usage_limit_percent",
+			"Cluster node GPU usage limit in percent per GPU",
+			[]string{"node", "gpu"}, nil),
+		gpuGeneralDesc: prometheus.NewDesc(
+			"cluster_node_gpu_usage_general_percent",
+			"Cluster node GPU general usage in percent per GPU",
+			[]string{"node", "gpu"}, nil),
+		gpuDecoderDesc: prometheus.NewDesc(
+			"cluster_node_gpu_usage_decoder_percent",
+			"Cluster node GPU decoder usage in percent per GPU",
+			[]string{"node", "gpu"}, nil),
+		gpuEncoderDesc: prometheus.NewDesc(
+			"cluster_node_gpu_usage_encoder_percent",
+			"Cluster node GPU encoder usage in percent per GPU",
+			[]string{"node", "gpu"}, nil),
+		gpuMemLimitDesc: prometheus.NewDesc(
+			"cluster_node_gpu_mem_limit_bytes",
+			"Cluster node GPU memory limit in bytes",
+			[]string{"node", "gpu"}, nil),
+		gpuMemCurrentDesc: prometheus.NewDesc(
+			"cluster_node_gpu_mem_current_bytes",
+			"Cluster node GPU current memory in bytes",
+			[]string{"node", "gpu"}, nil),
 	}
 }
 
@@ -141,6 +171,12 @@ func (c *clusterNodeCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.memCoreDesc
 	ch <- c.throttlingDesc
 	ch <- c.degradedDesc
+	ch <- c.gpuLimitDesc
+	ch <- c.gpuGeneralDesc
+	ch <- c.gpuDecoderDesc
+	ch <- c.gpuEncoderDesc
+	ch <- c.gpuMemLimitDesc
+	ch <- c.gpuMemCurrentDesc
 }
 
 func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
@@ -177,6 +213,16 @@ func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.memCurrentDesc, prometheus.GaugeValue, float64(node.Resources.Mem), node.ID)
 		ch <- prometheus.MustNewConstMetric(c.memCoreDesc, prometheus.GaugeValue, float64(node.Resources.MemCore), node.ID)
 		ch <- prometheus.MustNewConstMetric(c.throttlingDesc, prometheus.GaugeValue, throttling, node.ID)
+
+		for i, gpu := range node.Resources.GPU {
+			gpuid := strconv.Itoa(i)
+			ch <- prometheus.MustNewConstMetric(c.gpuLimitDesc, prometheus.GaugeValue, gpu.UsageLimit, node.ID, gpuid)
+			ch <- prometheus.MustNewConstMetric(c.gpuGeneralDesc, prometheus.GaugeValue, gpu.Usage, node.ID, gpuid)
+			ch <- prometheus.MustNewConstMetric(c.gpuDecoderDesc, prometheus.GaugeValue, gpu.Decoder, node.ID, gpuid)
+			ch <- prometheus.MustNewConstMetric(c.gpuEncoderDesc, prometheus.GaugeValue, gpu.Encoder, node.ID, gpuid)
+			ch <- prometheus.MustNewConstMetric(c.gpuMemLimitDesc, prometheus.GaugeValue, float64(gpu.MemLimit), node.ID, gpuid)
+			ch <- prometheus.MustNewConstMetric(c.gpuMemCurrentDesc, prometheus.GaugeValue, float64(gpu.Mem), node.ID, gpuid)
+		}
 
 		break
 	}
