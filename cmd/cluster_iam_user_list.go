@@ -11,12 +11,14 @@ var clusterIamUserListCmd = &cobra.Command{
 	Short: "List all users",
 	Long:  "List all users in the cluster",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		domain, _ := cmd.Flags().GetString("domain")
+
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		list, err := client.ClusterIdentitiesList()
+		list, err := client.ClusterIdentitiesList(domain)
 		if err != nil {
 			return err
 		}
@@ -32,13 +34,5 @@ var clusterIamUserListCmd = &cobra.Command{
 func init() {
 	clusterIamUserCmd.AddCommand(clusterIamUserListCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	clusterIamUserListCmd.Flags().StringP("domain", "d", "", "Domain")
 }

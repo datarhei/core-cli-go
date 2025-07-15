@@ -23,18 +23,17 @@ var clusterProcessListCmd = &cobra.Command{
 
 		ids, _ := cmd.Flags().GetString("ids")
 		filter, _ := cmd.Flags().GetString("filter")
-		domain, _ := cmd.Flags().GetString("domain")
 		reference, _ := cmd.Flags().GetString("reference")
 		idpattern, _ := cmd.Flags().GetString("idpattern")
 		refpattern, _ := cmd.Flags().GetString("refpattern")
 		ownerpattern, _ := cmd.Flags().GetString("ownerpattern")
 		domainpattern, _ := cmd.Flags().GetString("domainpattern")
 		load, _ := cmd.Flags().GetBool("load")
+		sort, _ := cmd.Flags().GetString("sort")
 
 		list, err := client.ClusterProcessList(coreclient.ProcessListOptions{
 			ID:            strings.Split(ids, ","),
 			Filter:        strings.Split(filter, ","),
-			Domain:        domain,
 			Reference:     reference,
 			IDPattern:     idpattern,
 			RefPattern:    refpattern,
@@ -63,17 +62,7 @@ var clusterProcessListCmd = &cobra.Command{
 			return err
 		}
 
-		if asRaw {
-			var err error
-			if aboutv1 != nil {
-				err = writeJSON(os.Stdout, aboutv1, true)
-			} else {
-				err = writeJSON(os.Stdout, aboutv2, true)
-			}
-			return err
-		}
-
-		nodes := map[string]api.ClusterNode{}
+		nodes := map[string]api.NodeResources{}
 
 		if load {
 			var about api.ClusterAbout
@@ -85,11 +74,11 @@ var clusterProcessListCmd = &cobra.Command{
 			}
 
 			for _, n := range about.Nodes {
-				nodes[n.ID] = n
+				nodes[n.ID] = n.Resources
 			}
 		}
 
-		processTable(list, pmap, nodes)
+		processTable(list, pmap, nodes, sort)
 
 		return nil
 	},
@@ -100,7 +89,6 @@ func init() {
 
 	clusterProcessListCmd.Flags().String("id", "", "A comma-separated list of process IDs")
 	clusterProcessListCmd.Flags().String("filter", "state", "A comma-separated list of filters per process: config, state, report, metadata")
-	clusterProcessListCmd.Flags().String("domain", "", "The domain to act upon")
 	clusterProcessListCmd.Flags().String("reference", "", "Limit list to specific reference")
 	clusterProcessListCmd.Flags().String("idpattern", "", "A glob pattern for the process IDs")
 	clusterProcessListCmd.Flags().String("refpattern", "", "A glob pattern for the process references")
@@ -108,4 +96,5 @@ func init() {
 	clusterProcessListCmd.Flags().String("domainpattern", "", "A gob pattern for the process domains")
 
 	clusterProcessListCmd.Flags().Bool("load", false, "Whether to show node resources")
+	clusterProcessListCmd.Flags().String("sort", "", "Table sorting")
 }

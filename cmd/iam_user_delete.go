@@ -14,13 +14,14 @@ var iamUserDeleteCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
+		domain, _ := cmd.Flags().GetString("domain")
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		if err := client.IdentityDelete(name); err != nil {
+		if err := client.IdentityDelete(name, domain); err != nil {
 			return err
 		}
 
@@ -32,4 +33,6 @@ var iamUserDeleteCmd = &cobra.Command{
 
 func init() {
 	iamUserCmd.AddCommand(iamUserDeleteCmd)
+
+	iamUserDeleteCmd.Flags().StringP("domain", "d", "", "Domain")
 }

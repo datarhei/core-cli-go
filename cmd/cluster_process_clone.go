@@ -44,7 +44,7 @@ var clusterProcessCloneCmd = &cobra.Command{
 		}
 
 		if !modified {
-			fmt.Printf("No changes. Process config will not be cloned.")
+			fmt.Printf("No changes. Process config will not be cloned.\n")
 			return nil
 		}
 

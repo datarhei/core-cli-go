@@ -21,6 +21,7 @@ var iamUserAddCmd = &cobra.Command{
 		if len(args) == 1 {
 			username = args[0]
 		}
+		domain, _ := cmd.Flags().GetString("domain")
 
 		var data []byte
 		var err error
@@ -87,7 +88,7 @@ var iamUserAddCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.IdentityAdd(config); err != nil {
+		if err := client.IdentityAdd(domain, config); err != nil {
 			return err
 		}
 
@@ -99,4 +100,5 @@ func init() {
 	iamUserCmd.AddCommand(iamUserAddCmd)
 
 	iamUserAddCmd.Flags().String("from-file", "-", "Load user config from file or stdin")
+	iamUserAddCmd.Flags().StringP("domain", "d", "", "Domain")
 }

@@ -17,13 +17,14 @@ var iamUserCloneCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
+		domain, _ := cmd.Flags().GetString("domain")
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		user, err := client.Identity(name)
+		user, err := client.Identity(name, domain)
 		if err != nil {
 			return err
 		}
@@ -57,10 +58,12 @@ var iamUserCloneCmd = &cobra.Command{
 			return err
 		}
 
-		return client.IdentityAdd(config)
+		return client.IdentityAdd(domain, config)
 	},
 }
 
 func init() {
 	iamUserCmd.AddCommand(iamUserCloneCmd)
+
+	iamUserCloneCmd.Flags().StringP("domain", "d", "", "Domain")
 }

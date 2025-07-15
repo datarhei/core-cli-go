@@ -19,6 +19,8 @@ var iamUserUpdateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fromFile, _ := cmd.Flags().GetString("from-file")
+		domain, _ := cmd.Flags().GetString("domain")
+
 		if len(fromFile) == 0 {
 			return fmt.Errorf("no user config file provided")
 		}
@@ -52,7 +54,7 @@ var iamUserUpdateCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.IdentityUpdate(name, config); err != nil {
+		if err := client.IdentityUpdate(name, domain, config); err != nil {
 			return err
 		}
 
@@ -64,4 +66,5 @@ func init() {
 	iamUserCmd.AddCommand(iamUserUpdateCmd)
 
 	iamUserUpdateCmd.Flags().String("from-file", "-", "Load user config from file or stdin")
+	iamUserUpdateCmd.Flags().StringP("domain", "d", "", "Domain")
 }

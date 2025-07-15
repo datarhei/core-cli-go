@@ -19,13 +19,14 @@ var iamUserEditCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		policies, _ := cmd.Flags().GetBool("policies")
+		domain, _ := cmd.Flags().GetString("domain")
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		user, err := client.Identity(name)
+		user, err := client.Identity(name, domain)
 		if err != nil {
 			return err
 		}
@@ -76,7 +77,7 @@ var iamUserEditCmd = &cobra.Command{
 				return err
 			}
 
-			return client.IdentityUpdate(name, config)
+			return client.IdentityUpdate(name, domain, config)
 		} else {
 			config := []api.IAMPolicy{}
 
@@ -88,7 +89,7 @@ var iamUserEditCmd = &cobra.Command{
 				return err
 			}
 
-			return client.IdentitySetPolicies(name, config)
+			return client.IdentitySetPolicies(name, domain, config)
 		}
 	},
 }
@@ -97,4 +98,5 @@ func init() {
 	iamUserCmd.AddCommand(iamUserEditCmd)
 
 	iamUserEditCmd.Flags().BoolP("policies", "p", false, "Edit only the policies")
+	iamUserEditCmd.Flags().StringP("domain", "d", "", "Domain")
 }

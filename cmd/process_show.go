@@ -61,7 +61,7 @@ var processShowCmd = &cobra.Command{
 		pmap := map[string]string{}
 		pmap[coreclient.NewProcessID(p.ID, p.Domain).String()] = nodeid
 
-		processTable([]coreclientapi.Process{p}, pmap, nil)
+		processTable([]coreclientapi.Process{p}, pmap, nil, "")
 
 		processIO(p)
 

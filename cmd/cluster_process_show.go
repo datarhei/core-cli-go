@@ -57,7 +57,7 @@ var clusterProcessShowCmd = &cobra.Command{
 			return err
 		}
 
-		processTable([]coreclientapi.Process{p}, pmap, nil)
+		processTable([]coreclientapi.Process{p}, pmap, nil, "")
 
 		processIO(p)
 

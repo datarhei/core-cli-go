@@ -20,6 +20,7 @@ var clusterIamUserAddCmd = &cobra.Command{
 		if len(args) == 1 {
 			username = args[0]
 		}
+		domain, _ := cmd.Flags().GetString("domain")
 
 		var data []byte
 		var err error
@@ -86,7 +87,7 @@ var clusterIamUserAddCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.ClusterIdentityAdd(config); err != nil {
+		if err := client.ClusterIdentityAdd(domain, config); err != nil {
 			return err
 		}
 
@@ -98,4 +99,5 @@ func init() {
 	clusterIamUserCmd.AddCommand(clusterIamUserAddCmd)
 
 	clusterIamUserAddCmd.Flags().String("from-file", "-", "Load user config from file or stdin")
+	clusterIamUserAddCmd.Flags().StringP("domain", "d", "", "Domain")
 }

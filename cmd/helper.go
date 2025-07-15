@@ -379,10 +379,10 @@ func formatByteCountBinary(b uint64) string {
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
-func processTable(list []coreclientapi.Process, processMap map[string]string, nodes map[string]coreclientapi.ClusterNode) {
+func processTable(list []coreclientapi.Process, processMap map[string]string, nodes map[string]coreclientapi.NodeResources, sort string) {
 	t := table.NewWriter()
 
-	t.AppendHeader(table.Row{"ID", "Domain", "Reference", "Order", "State", "Memory", "CPU", "Runtime", "Node", "Last Log"})
+	t.AppendHeader(table.Row{"id", "domain", "reference", "order", "state", "memory", "cpu", "runtime", "node", "last Log"})
 
 	nodeCount := map[string]uint64{}
 	stateCount := map[string]uint64{}
@@ -449,7 +449,7 @@ func processTable(list []coreclientapi.Process, processMap map[string]string, no
 			cpu = "* " + cpu
 			if nodes != nil {
 				if n, ok := nodes[p.CoreID]; ok {
-					n.Resources.IsThrottling = true
+					n.IsThrottling = true
 					nodes[p.CoreID] = n
 				}
 			}
@@ -484,12 +484,7 @@ func processTable(list []coreclientapi.Process, processMap map[string]string, no
 		{Number: 8, Align: text.AlignRight},
 	})
 
-	t.SortBy([]table.SortBy{
-		{Number: 2, Mode: table.Asc},
-		{Number: 1, Mode: table.Asc},
-		{Number: 4, Mode: table.Asc},
-		{Number: 6, Mode: table.Dsc},
-	})
+	t.SortBy(parseSort(sort, "domain:asc,id:asc,order:asc"))
 
 	t.SetStyle(table.StyleLight)
 
@@ -551,7 +546,7 @@ func processTable(list []coreclientapi.Process, processMap map[string]string, no
 
 	t = table.NewWriter()
 
-	t.AppendHeader(table.Row{"Node", "Count", "CPU", "Memory", "Throttling"})
+	t.AppendHeader(table.Row{"Node", "Count", "Memory", "CPU", "Throttling"})
 
 	sum = uint64(0)
 	for nodeid, count := range nodeCount {
@@ -560,22 +555,22 @@ func processTable(list []coreclientapi.Process, processMap map[string]string, no
 		throttling := false
 
 		if n, ok := nodes[nodeid]; ok {
-			if n.Resources.CPULimit != 0 {
-				cpu = fmt.Sprintf("%.1f%%", n.Resources.CPU/n.Resources.CPULimit*100)
+			if n.CPULimit != 0 {
+				cpu = fmt.Sprintf("%.1f%%", n.CPU/n.CPULimit*100)
 			}
 
-			if n.Resources.MemLimit != 0 {
-				memory = fmt.Sprintf("%.1f%%", float64(n.Resources.Mem)/float64(n.Resources.MemLimit)*100)
+			if n.MemLimit != 0 {
+				memory = fmt.Sprintf("%.1f%% (%s)", float64(n.Mem)/float64(n.MemLimit)*100, formatByteCountBinary(n.Mem))
 			}
 
-			throttling = n.Resources.IsThrottling
+			throttling = n.IsThrottling
 		}
 
 		t.AppendRow(table.Row{
 			nodeid,
 			count,
-			cpu,
 			memory,
+			cpu,
 			throttling,
 		})
 		sum += count
@@ -600,6 +595,35 @@ func processTable(list []coreclientapi.Process, processMap map[string]string, no
 	t.SetStyle(table.StyleLight)
 
 	fmt.Println(t.Render())
+}
+
+func parseSort(sort, def string) []table.SortBy {
+	if len(sort) == 0 {
+		sort = def
+	}
+
+	sortBy := []table.SortBy{}
+
+	fields := strings.Split(sort, ",")
+	for _, field := range fields {
+		before, after, found := strings.Cut(field, ":")
+
+		if !found {
+			after = "asc"
+		}
+
+		mode := table.Asc
+		if after == "dsc" {
+			mode = table.Dsc
+		}
+
+		sortBy = append(sortBy, table.SortBy{
+			Name: strings.ToLower(before),
+			Mode: mode,
+		})
+	}
+
+	return sortBy
 }
 
 func dbProcessTable(list []coreclientapi.Process, processMap map[string]string) {

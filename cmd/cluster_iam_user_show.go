@@ -14,13 +14,14 @@ var clusterIamUserShowCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		policies, _ := cmd.Flags().GetBool("policies")
+		domain, _ := cmd.Flags().GetString("domain")
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		user, err := client.ClusterIdentity(name)
+		user, err := client.ClusterIdentity(name, domain)
 		if err != nil {
 			return err
 		}
@@ -43,4 +44,5 @@ func init() {
 	clusterIamUserCmd.AddCommand(clusterIamUserShowCmd)
 
 	clusterIamUserShowCmd.Flags().BoolP("policies", "p", false, "Show only the policies")
+	clusterIamUserShowCmd.Flags().StringP("domain", "d", "", "Domain")
 }

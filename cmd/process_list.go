@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
+	"github.com/datarhei/core-client-go/v16/api"
 	"github.com/spf13/cobra"
 )
 
@@ -23,17 +24,17 @@ var processListCmd = &cobra.Command{
 
 		ids, _ := cmd.Flags().GetString("ids")
 		filter, _ := cmd.Flags().GetString("filter")
-		domain, _ := cmd.Flags().GetString("domain")
 		reference, _ := cmd.Flags().GetString("reference")
 		idpattern, _ := cmd.Flags().GetString("idpattern")
 		refpattern, _ := cmd.Flags().GetString("refpattern")
 		ownerpattern, _ := cmd.Flags().GetString("ownerpattern")
 		domainpattern, _ := cmd.Flags().GetString("domainpattern")
+		load, _ := cmd.Flags().GetBool("load")
+		sort, _ := cmd.Flags().GetString("sort")
 
 		list, err := client.ProcessList(coreclient.ProcessListOptions{
 			ID:            strings.Split(ids, ","),
 			Filter:        strings.Split(filter, ","),
-			Domain:        domain,
 			Reference:     reference,
 			IDPattern:     idpattern,
 			RefPattern:    refpattern,
@@ -58,7 +59,18 @@ var processListCmd = &cobra.Command{
 			pmap[coreclient.NewProcessID(p.ID, p.Domain).String()] = p.CoreID
 		}
 
-		processTable(list, pmap, nil)
+		about, err := client.About(false)
+		if err != nil {
+			return err
+		}
+
+		nodes := map[string]api.NodeResources{}
+
+		if load {
+			nodes[about.ID] = about.Resources
+		}
+
+		processTable(list, pmap, nodes, sort)
 
 		return nil
 	},
@@ -69,10 +81,12 @@ func init() {
 
 	processListCmd.Flags().String("id", "", "A comma-separated list of process IDs")
 	processListCmd.Flags().String("filter", "state", "A comma-separated list of filters per process: config, state, report, metadata")
-	processListCmd.Flags().String("domain", "", "The domain to act upon")
 	processListCmd.Flags().String("reference", "", "Limit list to specific reference")
 	processListCmd.Flags().String("idpattern", "", "A glob pattern for the process IDs")
 	processListCmd.Flags().String("refpattern", "", "A glob pattern for the process references")
 	processListCmd.Flags().String("ownerpattern", "", "A gob pattern for the process owners")
 	processListCmd.Flags().String("domainpattern", "", "A gob pattern for the process domains")
+
+	processListCmd.Flags().Bool("load", false, "Whether to show node resources")
+	processListCmd.Flags().String("sort", "", "Table sorting")
 }

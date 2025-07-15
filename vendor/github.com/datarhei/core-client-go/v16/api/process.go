@@ -74,6 +74,7 @@ type ProcessConfig struct {
 	ID             string                 `json:"id"`
 	Owner          string                 `json:"owner"`
 	Domain         string                 `json:"domain"`
+	Binary         string                 `json:"binary"`
 	Type           string                 `json:"type" validate:"oneof='ffmpeg' ''" jsonschema:"enum=ffmpeg,enum="`
 	Reference      string                 `json:"reference"`
 	Input          []ProcessConfigIO      `json:"input" validate:"required"`
@@ -103,6 +104,7 @@ type ProcessState struct {
 	LimitMode string       `json:"limit_mode"`
 	Resources ProcessUsage `json:"resources"`
 	Command   []string     `json:"command"`
+	PID       int32        `json:"pid" format:"int32"`
 }
 
 type ProcessUsageCPU struct {

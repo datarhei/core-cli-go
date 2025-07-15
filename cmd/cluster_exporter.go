@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 
 	coreclient "github.com/datarhei/core-client-go/v16"
 	"github.com/datarhei/core-client-go/v16/api"
@@ -299,10 +298,6 @@ func (c *clusterProcessCollector) Collect(ch chan<- prometheus.Metric) {
 		states[p.State.State]++
 
 		if p.State.State != "running" {
-			continue
-		}
-
-		if !strings.HasSuffix(p.ID, ":main") {
 			continue
 		}
 

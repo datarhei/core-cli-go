@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -45,8 +46,10 @@ var skillsListCmd = &cobra.Command{
 			d = skills.Formats
 		case "protocols":
 			d = skills.Protocols
-		default:
+		case "":
 			d = skills
+		default:
+			return fmt.Errorf("unknown skills name, use one of: ffmpeg, filters, hwaccels, codecs, devices, formats, protocols")
 		}
 
 		if err := writeJSON(os.Stdout, d, true); err != nil {

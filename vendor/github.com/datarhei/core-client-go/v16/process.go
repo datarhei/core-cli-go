@@ -41,7 +41,6 @@ func (p ProcessID) String() string {
 type ProcessListOptions struct {
 	ID            []string
 	Filter        []string
-	Domain        string
 	Reference     string
 	IDPattern     string
 	RefPattern    string
@@ -53,7 +52,6 @@ func (p *ProcessListOptions) Query() *url.Values {
 	values := &url.Values{}
 	values.Set("id", strings.Join(p.ID, ","))
 	values.Set("filter", strings.Join(p.Filter, ","))
-	values.Set("domain", p.Domain)
 	values.Set("reference", p.Reference)
 	values.Set("idpattern", p.IDPattern)
 	values.Set("refpattern", p.RefPattern)
@@ -155,7 +153,10 @@ func (r *restclient) processDelete(where string, id ProcessID) error {
 	query := &url.Values{}
 	query.Set("domain", id.Domain)
 
-	r.call("DELETE", path, query, nil, "", nil)
+	_, err := r.call("DELETE", path, query, nil, "", nil)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

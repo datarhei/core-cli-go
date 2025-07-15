@@ -18,13 +18,14 @@ var clusterIamUserEditCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		policies, _ := cmd.Flags().GetBool("policies")
+		domain, _ := cmd.Flags().GetString("domain")
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		user, err := client.ClusterIdentity(name)
+		user, err := client.ClusterIdentity(name, domain)
 		if err != nil {
 			return err
 		}
@@ -74,7 +75,7 @@ var clusterIamUserEditCmd = &cobra.Command{
 				return err
 			}
 
-			return client.ClusterIdentityUpdate(name, config)
+			return client.ClusterIdentityUpdate(name, domain, config)
 		} else {
 			config := []api.IAMPolicy{}
 
@@ -86,7 +87,7 @@ var clusterIamUserEditCmd = &cobra.Command{
 				return err
 			}
 
-			return client.ClusterIdentitySetPolicies(name, config)
+			return client.ClusterIdentitySetPolicies(name, domain, config)
 		}
 	},
 }
@@ -95,4 +96,5 @@ func init() {
 	clusterIamUserCmd.AddCommand(clusterIamUserEditCmd)
 
 	clusterIamUserEditCmd.Flags().BoolP("policies", "p", false, "Edit only the policies")
+	clusterIamUserEditCmd.Flags().StringP("domain", "d", "", "Domain")
 }

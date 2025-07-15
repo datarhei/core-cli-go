@@ -13,13 +13,14 @@ var clusterIamUserDeleteCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
+		domain, _ := cmd.Flags().GetString("domain")
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		if err := client.ClusterIdentityDelete(name); err != nil {
+		if err := client.ClusterIdentityDelete(name, domain); err != nil {
 			return err
 		}
 
@@ -31,4 +32,6 @@ var clusterIamUserDeleteCmd = &cobra.Command{
 
 func init() {
 	clusterIamUserCmd.AddCommand(clusterIamUserDeleteCmd)
+
+	clusterIamUserDeleteCmd.Flags().StringP("domain", "d", "", "Domain")
 }

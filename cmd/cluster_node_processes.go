@@ -24,7 +24,6 @@ var clusterNodeProcessesCmd = &cobra.Command{
 
 		ids, _ := cmd.Flags().GetString("ids")
 		filter, _ := cmd.Flags().GetString("filter")
-		domain, _ := cmd.Flags().GetString("domain")
 		reference, _ := cmd.Flags().GetString("reference")
 		idpattern, _ := cmd.Flags().GetString("idpattern")
 		refpattern, _ := cmd.Flags().GetString("refpattern")
@@ -34,7 +33,6 @@ var clusterNodeProcessesCmd = &cobra.Command{
 		list, err := client.ClusterNodeProcessList(id, coreclient.ProcessListOptions{
 			ID:            strings.Split(ids, ","),
 			Filter:        strings.Split(filter, ","),
-			Domain:        domain,
 			Reference:     reference,
 			IDPattern:     idpattern,
 			RefPattern:    refpattern,
@@ -58,7 +56,7 @@ var clusterNodeProcessesCmd = &cobra.Command{
 			return err
 		}
 
-		processTable(list, pmap, nil)
+		processTable(list, pmap, nil, "")
 
 		return nil
 	},
@@ -70,7 +68,6 @@ func init() {
 	clusterNodeProcessesCmd.Flags().Bool("raw", false, "Display raw result from the API as JSON")
 	clusterNodeProcessesCmd.Flags().String("id", "", "A comma-separated list of process IDs")
 	clusterNodeProcessesCmd.Flags().String("filter", "state", "A comma-separated list of filters per process: config, state, report, metadata")
-	clusterNodeProcessesCmd.Flags().String("domain", "", "The domain to act upon")
 	clusterNodeProcessesCmd.Flags().String("reference", "", "Limit list to specific reference")
 	clusterNodeProcessesCmd.Flags().String("idpattern", "", "A glob pattern for the process IDs")
 	clusterNodeProcessesCmd.Flags().String("refpattern", "", "A glob pattern for the process references")

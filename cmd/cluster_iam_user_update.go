@@ -18,6 +18,8 @@ var clusterIamUserUpdateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fromFile, _ := cmd.Flags().GetString("from-file")
+		domain, _ := cmd.Flags().GetString("domain")
+
 		if len(fromFile) == 0 {
 			return fmt.Errorf("no user config file provided")
 		}
@@ -51,7 +53,7 @@ var clusterIamUserUpdateCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.ClusterIdentityUpdate(name, config); err != nil {
+		if err := client.ClusterIdentityUpdate(name, domain, config); err != nil {
 			return err
 		}
 
@@ -63,4 +65,5 @@ func init() {
 	clusterIamUserCmd.AddCommand(clusterIamUserUpdateCmd)
 
 	clusterIamUserUpdateCmd.Flags().String("from-file", "-", "Load user config from file or stdin")
+	clusterIamUserUpdateCmd.Flags().StringP("domain", "d", "", "Domain")
 }

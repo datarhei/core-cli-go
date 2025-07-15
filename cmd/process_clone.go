@@ -24,14 +24,30 @@ var processCloneCmd = &cobra.Command{
 			return err
 		}
 
+		var fromClient coreclient.RestClient
+
+		from, _ := cmd.Flags().GetString("from")
+		if len(from) != 0 {
+			otherClient, err := connectCore(from)
+			if err != nil {
+				return fmt.Errorf("connecting to %s: %w", from, err)
+			}
+
+			fromClient = otherClient
+		} else {
+			fromClient = client
+		}
+
 		id := coreclient.ParseProcessID(pid)
 
-		process, err := client.Process(id, []string{"config"})
+		process, err := fromClient.Process(id, []string{"config"})
 		if err != nil {
 			return err
 		}
 
-		process.Config.ID += "_clone"
+		if len(from) == 0 {
+			process.Config.ID += "_clone"
+		}
 
 		data, err := json.MarshalIndent(process.Config, "", "   ")
 		if err != nil {
@@ -44,7 +60,7 @@ var processCloneCmd = &cobra.Command{
 		}
 
 		if !modified {
-			fmt.Printf("No changes. Process config will not be cloned.")
+			fmt.Printf("No changes. Process config will not be cloned.\n")
 			return nil
 		}
 
@@ -64,4 +80,6 @@ var processCloneCmd = &cobra.Command{
 
 func init() {
 	processCmd.AddCommand(processCloneCmd)
+
+	processCloneCmd.Flags().String("from", "", "Name of core to clone the process from")
 }

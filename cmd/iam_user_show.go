@@ -15,13 +15,14 @@ var iamUserShowCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		policies, _ := cmd.Flags().GetBool("policies")
+		domain, _ := cmd.Flags().GetString("domain")
 
 		client, err := connectSelectedCore()
 		if err != nil {
 			return err
 		}
 
-		user, err := client.Identity(name)
+		user, err := client.Identity(name, domain)
 		if err != nil {
 			return err
 		}
@@ -44,4 +45,5 @@ func init() {
 	iamUserCmd.AddCommand(iamUserShowCmd)
 
 	iamUserShowCmd.Flags().BoolP("policies", "p", false, "Show only the policies")
+	iamUserShowCmd.Flags().StringP("domain", "d", "", "Domain")
 }

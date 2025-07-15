@@ -67,7 +67,7 @@ var coreEditCmd = &cobra.Command{
 
 		if !modified {
 			// They are the same, nothing has been changed. No need to store the metadata
-			fmt.Printf("No changes. Core config will not be updated.")
+			fmt.Printf("No changes. Core config will not be updated.\n")
 			return nil
 		}
 
