@@ -34,7 +34,7 @@ var clusterProcessDeleteCmd = &cobra.Command{
 
 			for _, p := range list {
 				id := coreclient.ProcessIDFromProcess(p)
-				if err := client.ClusterProcessDelete(id); err != nil {
+				if err := client.ClusterProcessDelete(id, true); err != nil {
 					fmt.Printf("%s error %s\n", id, err.Error())
 				} else {
 					fmt.Printf("%s delete\n", id)
@@ -44,7 +44,7 @@ var clusterProcessDeleteCmd = &cobra.Command{
 			return nil
 		}
 
-		if err := client.ClusterProcessDelete(id); err != nil {
+		if err := client.ClusterProcessDelete(id, true); err != nil {
 			return err
 		}
 

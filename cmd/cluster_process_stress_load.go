@@ -21,6 +21,7 @@ var clusterProcessStressLoadCmd = &cobra.Command{
 	Long:  "Process API stress",
 	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		restart, _ := cmd.Flags().GetBool("restart")
 		nThreads, err := strconv.Atoi(args[0])
 		if err != nil {
 			return err
@@ -116,10 +117,13 @@ var clusterProcessStressLoadCmd = &cobra.Command{
 
 					client.ClusterProcessAdd(*config)
 					config.Reference = StringAlphanumeric(16)
-					client.ClusterProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config)
+					client.ClusterProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config, false)
 					client.ClusterProcess(coreclient.NewProcessID(config.ID, config.Domain), []string{})
+					if restart {
+						client.ClusterProcessCommand(coreclient.NewProcessID(config.ID, config.Domain), "restart")
+					}
 
-					requests <- 3
+					requests <- 4
 				}
 			}(ctx, requestsChan)
 		}
@@ -146,4 +150,6 @@ var clusterProcessStressLoadCmd = &cobra.Command{
 
 func init() {
 	clusterProcessStressCmd.AddCommand(clusterProcessStressLoadCmd)
+
+	clusterProcessStressLoadCmd.Flags().Bool("restart", false, "Whether to issue an additional restart")
 }

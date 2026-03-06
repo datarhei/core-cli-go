@@ -54,7 +54,7 @@ var clusterProcessStressAddCmd = &cobra.Command{
 		}
 
 		if deleteProcess {
-			err = client.ClusterProcessDelete(coreclient.NewProcessID(config.ID, config.Domain))
+			err = client.ClusterProcessDelete(coreclient.NewProcessID(config.ID, config.Domain), true)
 			if err != nil {
 				return err
 			}

@@ -19,6 +19,7 @@ var processUpdateCmd = &cobra.Command{
 	Long:  "Update the process with the given ID. The process with the given ID will be stopped and deleted. The new process doesn't neet to have the same ID.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		force, _ := cmd.Flags().GetBool("force")
 		fromFile, _ := cmd.Flags().GetString("from-file")
 		if len(fromFile) == 0 {
 			return fmt.Errorf("no process configuration file provided")
@@ -55,7 +56,7 @@ var processUpdateCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		if err := client.ProcessUpdate(id, config); err != nil {
+		if err := client.ProcessUpdate(id, config, force); err != nil {
 			return err
 		}
 
@@ -67,4 +68,5 @@ func init() {
 	processCmd.AddCommand(processUpdateCmd)
 
 	processUpdateCmd.Flags().String("from-file", "-", "Load process config from file or stdin")
+	processUpdateCmd.Flags().Bool("force", false, "Whether to force an config update")
 }

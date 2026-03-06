@@ -24,9 +24,23 @@ var clusterProcessCloneCmd = &cobra.Command{
 			return err
 		}
 
+		var fromClient coreclient.RestClient
+
+		from, _ := cmd.Flags().GetString("from")
+		if len(from) != 0 {
+			otherClient, err := connectCore(from)
+			if err != nil {
+				return fmt.Errorf("connecting to %s: %w", from, err)
+			}
+
+			fromClient = otherClient
+		} else {
+			fromClient = client
+		}
+
 		id := coreclient.ParseProcessID(pid)
 
-		process, err := client.ClusterProcess(id, []string{"config"})
+		process, err := fromClient.ClusterProcess(id, []string{"config"})
 		if err != nil {
 			return err
 		}
@@ -64,4 +78,6 @@ var clusterProcessCloneCmd = &cobra.Command{
 
 func init() {
 	clusterProcessCmd.AddCommand(clusterProcessCloneCmd)
+
+	clusterProcessCloneCmd.Flags().String("from", "", "Name of core to clone the process from")
 }

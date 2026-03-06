@@ -15,6 +15,7 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 	Long:  "Rebalance the processes in the cluster",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		execute, _ := cmd.Flags().GetBool("execute")
+		prio, _ := cmd.Flags().GetString("prio")
 
 		client, err := connectSelectedCore()
 		if err != nil {
@@ -57,12 +58,20 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 			return err
 		}
 
-		relocateList := []api.Process{}
+		type relocateProcess struct {
+			id       coreclient.ProcessID
+			fromNode string
+			toNode   string
+		}
+
+		relocateList := []relocateProcess{}
 
 		// Rebalance processes WITHOUT reference
 
 		processListWithoutReference := []api.Process{}
 		nodeProcessCount := map[string]int{}
+		nodeCPU := map[string]float64{}
+		totalCPU := float64(0)
 
 		for _, p := range list {
 			if len(p.Reference) != 0 {
@@ -71,6 +80,8 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 
 			processListWithoutReference = append(processListWithoutReference, p)
 			nodeProcessCount[p.CoreID]++
+			nodeCPU[p.CoreID] += p.State.Resources.CPU.Current
+			totalCPU += p.State.Resources.CPU.Current
 		}
 
 		// Sort processes by runtime, shortest to longest
@@ -78,7 +89,7 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 			return processListWithoutReference[a].State.Runtime < processListWithoutReference[b].State.Runtime
 		})
 
-		// Group processed by node
+		// Group processes by node
 		processListNode := map[string][]api.Process{}
 
 		for _, p := range processListWithoutReference {
@@ -89,21 +100,47 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 
 		nProcesses := len(processListWithoutReference)         // Number of processes
 		nProcessesPerNode := (nProcesses / nEligibleNodes) + 1 // Desired number of processes per node
+		nCPUPerNode := (totalCPU / float64(nEligibleNodes))    // Desired CPU per node
 
-		// Redistribute processes
-		for nodeid, count := range nodeProcessCount {
-			diff := count - nProcessesPerNode
-			if diff <= 0 {
-				continue
-			}
-
-			// This node has too many processes, move some away
-			for _, p := range processListNode[nodeid] {
-				relocateList = append(relocateList, p)
-
-				diff--
+		if prio == "cpu" {
+			for nodeid, cpu := range nodeCPU {
+				diff := cpu - nCPUPerNode
 				if diff <= 0 {
-					break
+					continue
+				}
+
+				// This node has too many processes, move some away
+				for _, p := range processListNode[nodeid] {
+					relocateList = append(relocateList, relocateProcess{
+						id:       coreclient.NewProcessID(p.ID, p.Domain),
+						fromNode: p.CoreID,
+					})
+
+					diff -= p.State.Resources.CPU.Current
+					if diff <= 0 {
+						break
+					}
+				}
+			}
+		} else {
+			// Redistribute processes
+			for nodeid, count := range nodeProcessCount {
+				diff := count - nProcessesPerNode
+				if diff <= 0 {
+					continue
+				}
+
+				// This node has too many processes, move some away
+				for _, p := range processListNode[nodeid] {
+					relocateList = append(relocateList, relocateProcess{
+						id:       coreclient.NewProcessID(p.ID, p.Domain),
+						fromNode: p.CoreID,
+					})
+
+					diff--
+					if diff <= 0 {
+						break
+					}
 				}
 			}
 		}
@@ -112,6 +149,8 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 
 		processReferenceMap := map[string][]api.Process{} // List of processes grouped by reference
 		nodeProcessCount = map[string]int{}               // Number of processes per node
+		nodeCPU = map[string]float64{}
+		totalCPU = float64(0)
 
 		// Group processes by their reference
 		for _, p := range list {
@@ -124,6 +163,9 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 			processReferenceMap[p.Reference] = ref
 
 			nodeProcessCount[p.CoreID]++
+			nodeCPU[p.CoreID] += p.State.Resources.CPU.Current
+
+			totalCPU += p.State.Resources.CPU.Current
 		}
 
 		processListWithReference := []api.Process{}
@@ -143,6 +185,9 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 
 		// Sort processes by runtime, shortest to longest
 		sort.SliceStable(processListWithReference, func(a, b int) bool {
+			if prio == "cpu" {
+				return processListWithReference[a].State.Resources.CPU.Current > processListWithReference[b].State.Resources.CPU.Current
+			}
 			return processListWithReference[a].State.Runtime < processListWithReference[b].State.Runtime
 		})
 
@@ -157,26 +202,58 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 
 		// Calculate desired number of processes per node
 		nProcessesPerNode = (nProcesses / nEligibleNodes) + 1
+		nCPUPerNode = (totalCPU / float64(nEligibleNodes)) // Desired CPU per node
 
-		for nodeid, count := range nodeProcessCount {
-			diff := count - nProcessesPerNode
-			if diff <= 0 {
-				continue
-			}
-
-			// This node has too many processes, move some away. Here we have to
-			// move all processes with the same reference
-			for _, p := range processListNode[nodeid] {
-				reference := p.Reference
-
-				for _, p := range processReferenceMap[reference] {
-					relocateList = append(relocateList, p)
-
-					diff--
+		if prio == "cpu" {
+			for nodeid, cpu := range nodeCPU {
+				diff := cpu - nCPUPerNode
+				if diff <= 0 {
+					continue
 				}
 
+				// This node has too many processes, move some away. Here we have to
+				// move all processes with the same reference
+				for _, p := range processListNode[nodeid] {
+					reference := p.Reference
+
+					for _, p := range processReferenceMap[reference] {
+						relocateList = append(relocateList, relocateProcess{
+							id:       coreclient.NewProcessID(p.ID, p.Domain),
+							fromNode: p.CoreID,
+						})
+
+						diff -= p.State.Resources.CPU.Current
+					}
+
+					if diff <= 0 {
+						break
+					}
+				}
+			}
+		} else {
+			for nodeid, count := range nodeProcessCount {
+				diff := count - nProcessesPerNode
 				if diff <= 0 {
-					break
+					continue
+				}
+
+				// This node has too many processes, move some away. Here we have to
+				// move all processes with the same reference
+				for _, p := range processListNode[nodeid] {
+					reference := p.Reference
+
+					for _, p := range processReferenceMap[reference] {
+						relocateList = append(relocateList, relocateProcess{
+							id:       coreclient.NewProcessID(p.ID, p.Domain),
+							fromNode: p.CoreID,
+						})
+
+						diff--
+					}
+
+					if diff <= 0 {
+						break
+					}
 				}
 			}
 		}
@@ -189,12 +266,10 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 		}
 
 		for i, p := range relocateList {
-			id := coreclient.NewProcessID(p.ID, p.Domain)
-
-			fmt.Printf("%4d / %4d: relocating %s away from %s ... ", i+1, total, id, p.CoreID)
+			fmt.Printf("%4d / %4d: relocating %s away from %s ... ", i+1, total, p.id, p.fromNode)
 
 			if execute {
-				if err := client.ClusterRelocateProcess(id, ""); err != nil {
+				if err := client.ClusterRelocateProcess(p.id, p.toNode); err != nil {
 					fmt.Printf("failed: %s\n", err.Error())
 				} else {
 					fmt.Printf("OK\n")
@@ -216,4 +291,5 @@ func init() {
 	clusterProcessCmd.AddCommand(clusterProcessRebalanceCmd)
 
 	clusterProcessRebalanceCmd.Flags().BoolP("execute", "x", false, "Actually execute the cleanup")
+	clusterProcessRebalanceCmd.Flags().StringP("prio", "p", "", "Rebalance prio count|cpu|memory")
 }

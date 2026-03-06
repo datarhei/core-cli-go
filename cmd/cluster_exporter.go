@@ -77,6 +77,7 @@ func (c *clusterHLSSessionCollector) Collect(ch chan<- prometheus.Metric) {
 type clusterNodeCollector struct {
 	client coreclient.RestClient
 
+	numNodes          *prometheus.Desc
 	cpuLimitDesc      *prometheus.Desc
 	cpuCurrentDesc    *prometheus.Desc
 	cpuNCoresDesc     *prometheus.Desc
@@ -97,6 +98,10 @@ type clusterNodeCollector struct {
 func newClusterNodeCollector(client coreclient.RestClient) prometheus.Collector {
 	return &clusterNodeCollector{
 		client: client,
+		numNodes: prometheus.NewDesc(
+			"cluster_num_nodes_total",
+			"Number of nodes in cluster",
+			[]string{"node"}, nil),
 		cpuLimitDesc: prometheus.NewDesc(
 			"cluster_node_cpu_limit_percent",
 			"Cluster node CPU limit in percent",
@@ -198,6 +203,8 @@ func (c *clusterNodeCollector) Collect(ch chan<- prometheus.Metric) {
 		if node.ID != coreabout.ID {
 			continue
 		}
+
+		ch <- prometheus.MustNewConstMetric(c.numNodes, prometheus.GaugeValue, float64(len(about.Nodes)), node.ID)
 
 		throttling := .0
 		if node.Resources.IsThrottling {

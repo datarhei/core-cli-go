@@ -71,6 +71,19 @@ func (r *restclient) ClusterSnapshot() (io.ReadCloser, error) {
 	return r.stream(context.Background(), "GET", "/v3/cluster/snapshot", nil, nil, "", nil)
 }
 
+func (r *restclient) ClusterDeployments() (api.ClusterDeployments, error) {
+	deployments := api.ClusterDeployments{}
+
+	data, err := r.call("GET", "/v3/cluster/deployments", nil, nil, "", nil)
+	if err != nil {
+		return deployments, err
+	}
+
+	err = json.Unmarshal(data, &deployments)
+
+	return deployments, err
+}
+
 func (r *restclient) ClusterLeave(id string) error {
 	var buf bytes.Buffer
 

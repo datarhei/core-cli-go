@@ -68,6 +68,7 @@ func initConfig() {
 		viper.AddConfigPath(home)
 		viper.SetConfigType("json")
 		viper.SetConfigName(".corecli")
+		viper.SetConfigPermissions(0o600)
 		viper.SafeWriteConfig()
 	}
 

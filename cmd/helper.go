@@ -760,7 +760,7 @@ var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func StringWithCharset(length int, charset string) string {
 	b := make([]byte, length)
-	for i := range b {
+	for i := range length {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 

@@ -77,8 +77,10 @@ type RestClient interface {
 	FilesystemMoveFile(dstfs, dstpath, srcfs, srcpath string) error                    // PUT /v3/fs
 	FilesystemCopyFile(dstfs, dstpath, srcfs, srcpath string) error                    // PUT /v3/fs
 
-	Log() ([]api.LogEvent, error)                                                   // GET /v3/log
-	Events(ctx context.Context, filters api.EventFilters) (<-chan api.Event, error) // POST /v3/events
+	Log() ([]api.LogEvents, error)                                                                       // GET /v3/log
+	Events(ctx context.Context, filters api.LogEventFilters) (<-chan api.LogEvent, error)                // POST /v3/events
+	MediaEvents(ctx context.Context, storage, pattern string) (<-chan api.MediaEvent, error)             // POST /v3/events/media/{type}
+	ProcessEvents(ctx context.Context, filters api.ProcessEventFilters) (<-chan api.ProcessEvent, error) // POST /v3/events/process
 
 	Metadata(key string) (api.Metadata, error)           // GET /v3/metadata/{key}
 	MetadataSet(key string, metadata api.Metadata) error // PUT /v3/metadata/{key}
@@ -89,8 +91,8 @@ type RestClient interface {
 	ProcessList(opts ProcessListOptions) ([]api.Process, error)               // GET /v3/process
 	ProcessAdd(p api.ProcessConfig) error                                     // POST /v3/process
 	Process(id ProcessID, filter []string) (api.Process, error)               // GET /v3/process/{id}
-	ProcessUpdate(id ProcessID, p api.ProcessConfig) error                    // PUT /v3/process/{id}
-	ProcessDelete(id ProcessID) error                                         // DELETE /v3/process/{id}
+	ProcessUpdate(id ProcessID, p api.ProcessConfig, force bool) error        // PUT /v3/process/{id}
+	ProcessDelete(id ProcessID, purge bool) error                             // DELETE /v3/process/{id}
 	ProcessCommand(id ProcessID, command string) error                        // PUT /v3/process/{id}/command
 	ProcessProbe(id ProcessID) (api.Probe, error)                             // GET /v3/process/{id}/probe
 	ProcessProbeConfig(config api.ProcessConfig) (api.Probe, error)           // POST /v3/process/probe
@@ -113,6 +115,7 @@ type RestClient interface {
 	Cluster() (*api.ClusterAboutV1, *api.ClusterAboutV2, error) // GET /v3/cluster
 	ClusterHealthy() (bool, error)                              // GET /v3/cluster/healthy
 	ClusterSnapshot() (io.ReadCloser, error)                    // GET /v3/cluster/snapshot
+	ClusterDeployments() (api.ClusterDeployments, error)        // GET /v3/cluster/deployments
 	ClusterLeave(id string) error                               // PUT /v3/cluster/leave
 	ClusterTransferLeadership(id string) error                  // PUT /v3/cluster/transfer/{id}
 
@@ -143,8 +146,8 @@ type RestClient interface {
 	ClusterProcessList(opts ProcessListOptions) ([]api.Process, error)                    // GET /v3/cluster/process
 	ClusterProcess(id ProcessID, filter []string) (api.Process, error)                    // GET /v3/cluster/process/{id}
 	ClusterProcessAdd(p api.ProcessConfig) error                                          // POST /v3/cluster/process
-	ClusterProcessUpdate(id ProcessID, p api.ProcessConfig) error                         // PUT /v3/cluster/process/{id}
-	ClusterProcessDelete(id ProcessID) error                                              // DELETE /v3/cluster/process/{id}
+	ClusterProcessUpdate(id ProcessID, p api.ProcessConfig, force bool) error             // PUT /v3/cluster/process/{id}
+	ClusterProcessDelete(id ProcessID, purge bool) error                                  // DELETE /v3/cluster/process/{id}
 	ClusterProcessCommand(id ProcessID, command string) error                             // PUT /v3/cluster/process/{id}/command
 	ClusterProcessMetadata(id ProcessID, key string) (api.Metadata, error)                // GET /v3/cluster/process/{id}/metadata/{key}
 	ClusterProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error      // PUT /v3/cluster/process/{id}/metadata/{key}
@@ -161,7 +164,8 @@ type RestClient interface {
 	ClusterIdentityDelete(name, domain string) error                         // DELETE /v3/cluster/iam/user/{name}
 	ClusterIAMReload() error                                                 // PUT /v3/cluster/iam/reload
 
-	ClusterEvents(ctx context.Context, filters api.EventFilters) (<-chan api.Event, error) // POST /v3/cluster/events
+	ClusterLogEvents(ctx context.Context, filters api.LogEventFilters) (<-chan api.LogEvent, error)             // POST /v3/cluster/events/log
+	ClusterProcessEvents(ctx context.Context, filters api.ProcessEventFilters) (<-chan api.ProcessEvent, error) // POST /v3/cluster/events/process
 
 	RTMPChannels() ([]api.RTMPChannel, error) // GET /v3/rtmp
 	SRTChannels() ([]api.SRTChannel, error)   // GET /v3/srt
@@ -892,27 +896,77 @@ func (r *restclient) request(req *http.Request) (int, io.ReadCloser, error) {
 			}
 		}
 	*/
-	reader := resp.Body
+
+	body := &ReadCloseCounter{rc: resp.Body}
+
+	var reader io.ReadCloser = body
 
 	contentEncoding := resp.Header.Get("Content-Encoding")
 
-	if contentEncoding == "gzip" {
-		reader, err = gzip.NewReader(resp.Body)
+	switch contentEncoding {
+	case "":
+	case "gzip":
+		reader, err = gzip.NewReader(body)
 		if err != nil {
 			resp.Body.Close()
 			return -1, nil, err
 		}
-	} else if contentEncoding == "zstd" {
-		zstd, err := zstd.NewReader(resp.Body)
+	case "zstd":
+		zstd, err := zstd.NewReader(body)
 		if err != nil {
 			resp.Body.Close()
 			return -1, nil, err
 		}
 
 		reader = zstd.IOReadCloser()
+	default:
+		return -1, nil, fmt.Errorf("unsupported content-encoding: %s", contentEncoding)
 	}
 
-	return resp.StatusCode, reader, nil
+	return resp.StatusCode, &ShadowReadCloser{rc: reader, shadow: body}, nil
+}
+
+type ShadowReadCloser struct {
+	rc     io.ReadCloser
+	shadow io.ReadCloser
+}
+
+func (r *ShadowReadCloser) Read(p []byte) (int, error) {
+	return r.rc.Read(p)
+}
+
+func (r *ShadowReadCloser) Close() error {
+	r.shadow.Close()
+	return r.rc.Close()
+}
+
+type ReadCloseCounter struct {
+	rc io.ReadCloser
+
+	bytes uint64
+	start time.Time
+}
+
+func (r *ReadCloseCounter) Read(p []byte) (int, error) {
+	n, err := r.rc.Read(p)
+
+	if r.start.IsZero() {
+		r.start = time.Now()
+	}
+	r.bytes += uint64(n)
+
+	return n, err
+}
+
+func (r *ReadCloseCounter) Close() error {
+	/*
+		defer func() {
+			duration := time.Since(r.start)
+			fmt.Printf("*** %d bytes in %.3f seconds => %.3f bit/s ***\n", r.bytes, duration.Seconds(), float64(r.bytes)*8/duration.Seconds())
+		}()
+	*/
+
+	return r.rc.Close()
 }
 
 func (r *restclient) stream(ctx context.Context, method, path string, query *url.Values, header http.Header, contentType string, data io.Reader) (io.ReadCloser, error) {

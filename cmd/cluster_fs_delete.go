@@ -19,6 +19,10 @@ var clusterFilesystemDeleteCmd = &cobra.Command{
 		storage := args[0]
 		pattern := ""
 		execute, _ := cmd.Flags().GetBool("execute")
+		minage, err := cmd.Flags().GetDuration("minage")
+		if err != nil {
+			return err
+		}
 
 		if len(args) > 1 {
 			pattern = args[1]
@@ -40,8 +44,16 @@ var clusterFilesystemDeleteCmd = &cobra.Command{
 
 		nfiles := len(files)
 		nbytes := uint64(0)
+		min := time.Now().Add(-minage)
 
 		for _, file := range files {
+			lastMod := time.Unix(file.LastMod, 0)
+			if minage != 0 {
+				if lastMod.After(min) {
+					continue
+				}
+			}
+
 			if execute {
 				err := client.ClusterNodeFilesystemDeleteFile(file.CoreID, storage, file.Name)
 				if err != nil {
@@ -49,7 +61,6 @@ var clusterFilesystemDeleteCmd = &cobra.Command{
 				}
 			}
 
-			lastMod := time.Unix(file.LastMod, 0)
 			t.AppendRow(table.Row{file.Name, formatByteCountBinary(uint64(file.Size)), lastMod.Format("2006-01-02 15:04:05"), file.CoreID})
 
 			nbytes += uint64(file.Size)
@@ -84,4 +95,5 @@ func init() {
 	clusterFilesystemCmd.AddCommand(clusterFilesystemDeleteCmd)
 
 	clusterFilesystemDeleteCmd.Flags().BoolP("execute", "x", false, "Actually delete the files")
+	clusterFilesystemDeleteCmd.Flags().DurationP("minage", "", time.Duration(0), "Minimal age of files")
 }

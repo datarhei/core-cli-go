@@ -100,7 +100,7 @@ var processStressLoadCmd = &cobra.Command{
 
 					client.ProcessAdd(*config)
 					config.Reference = StringAlphanumeric(16)
-					client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config)
+					client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config, false)
 					client.Process(coreclient.NewProcessID(config.ID, config.Domain), []string{})
 
 					requests <- 3

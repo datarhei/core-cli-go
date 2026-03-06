@@ -93,7 +93,10 @@ var processStressUpdateCmd = &cobra.Command{
 					config := process.Config
 
 					config.Reference = StringAlphanumeric(16)
-					client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config)
+					err = client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config, false)
+					if err != nil {
+						fmt.Printf("error: %v\n", err)
+					}
 
 					requests <- 2
 				}

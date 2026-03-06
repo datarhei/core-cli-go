@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/datarhei/core-client-go/v16/api"
@@ -122,7 +123,7 @@ func (r *restclient) processAdd(where string, p api.ProcessConfig) error {
 	return nil
 }
 
-func (r *restclient) processUpdate(where string, id ProcessID, p api.ProcessConfig) error {
+func (r *restclient) processUpdate(where string, id ProcessID, p api.ProcessConfig, force bool) error {
 	var buf bytes.Buffer
 
 	path := "/v3/process/" + url.PathEscape(id.ID)
@@ -136,6 +137,10 @@ func (r *restclient) processUpdate(where string, id ProcessID, p api.ProcessConf
 	query := &url.Values{}
 	query.Set("domain", id.Domain)
 
+	if force {
+		query.Set("force", "restart")
+	}
+
 	_, err := r.call("PUT", path, query, nil, "application/json", &buf)
 	if err != nil {
 		return err
@@ -144,7 +149,7 @@ func (r *restclient) processUpdate(where string, id ProcessID, p api.ProcessConf
 	return nil
 }
 
-func (r *restclient) processDelete(where string, id ProcessID) error {
+func (r *restclient) processDelete(where string, id ProcessID, purge bool) error {
 	path := "/v3/process/" + url.PathEscape(id.ID)
 	if where == "cluster" {
 		path = "/v3/cluster/process/" + url.PathEscape(id.ID)
@@ -152,6 +157,7 @@ func (r *restclient) processDelete(where string, id ProcessID) error {
 
 	query := &url.Values{}
 	query.Set("domain", id.Domain)
+	query.Set("purge", strconv.FormatBool(purge))
 
 	_, err := r.call("DELETE", path, query, nil, "", nil)
 	if err != nil {
@@ -294,12 +300,12 @@ func (r *restclient) ProcessAdd(p api.ProcessConfig) error {
 	return r.processAdd("", p)
 }
 
-func (r *restclient) ProcessUpdate(id ProcessID, p api.ProcessConfig) error {
-	return r.processUpdate("", id, p)
+func (r *restclient) ProcessUpdate(id ProcessID, p api.ProcessConfig, force bool) error {
+	return r.processUpdate("", id, p, force)
 }
 
-func (r *restclient) ProcessDelete(id ProcessID) error {
-	return r.processDelete("", id)
+func (r *restclient) ProcessDelete(id ProcessID, purge bool) error {
+	return r.processDelete("", id, purge)
 }
 
 func (r *restclient) ProcessCommand(id ProcessID, command string) error {

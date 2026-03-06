@@ -1,77 +1,28 @@
 package cmd
 
 import (
-	"context"
-	"os"
-	"os/signal"
-
-	"github.com/datarhei/core-client-go/v16/api"
-
 	"github.com/spf13/cobra"
 )
 
 var clusterEventsCmd = &cobra.Command{
-	Use:   "events [component [key=value] [key=value] ...] ; [component [key=value] ...]",
-	Short: "Retrieve events",
-	Long:  "Retrieve events",
-	Args:  cobra.MinimumNArgs(0),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := connectSelectedCore()
-		if err != nil {
-			return err
-		}
-
-		filters := api.EventFilters{
-			Filters: []api.EventFilter{},
-		}
-
-		for {
-			var filter api.EventFilter
-			var done bool
-
-			args, filter, done = parseFilter(args)
-			if done {
-				break
-			}
-
-			filters.Filters = append(filters.Filters, filter)
-		}
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		events, err := client.ClusterEvents(ctx, filters)
-		if err != nil {
-			return err
-		}
-
-		go func(ctx context.Context, events <-chan api.Event) {
-			for {
-				select {
-				case event, ok := <-events:
-					if !ok {
-						return
-					}
-					writeJSON(os.Stdout, event, true)
-				case <-ctx.Done():
-					return
-				}
-			}
-		}(ctx, events)
-
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, os.Interrupt)
-
-		select {
-		case <-quit:
-			cancel()
-		case <-ctx.Done():
-		}
-
-		return nil
-	},
+	Use:   "events",
+	Short: "Cluster events related commands",
+	Long:  "Cluster events related commands",
+	//Run: func(cmd *cobra.Command, args []string) {
+	//	fmt.Println("process called")
+	//},
 }
 
 func init() {
 	clusterCmd.AddCommand(clusterEventsCmd)
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	//clusterFilesystemCmd.PersistentFlags().Bool("raw", false, "Display raw result from the API as JSON")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// processCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

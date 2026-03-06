@@ -8,8 +8,8 @@ import (
 	"github.com/datarhei/core-client-go/v16/api"
 )
 
-func (r *restclient) Log() ([]api.LogEvent, error) {
-	var log []api.LogEvent
+func (r *restclient) Log() ([]api.LogEvents, error) {
+	var log []api.LogEvents
 
 	query := &url.Values{}
 	query.Set("format", "raw")

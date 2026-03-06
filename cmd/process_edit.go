@@ -18,6 +18,8 @@ var processEditCmd = &cobra.Command{
 	Long:  "Edit the config of a process",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		force, _ := cmd.Flags().GetBool("force")
+
 		pid := args[0]
 
 		client, err := connectSelectedCore()
@@ -42,7 +44,7 @@ var processEditCmd = &cobra.Command{
 			return err
 		}
 
-		if !modified {
+		if !force && !modified {
 			// They are the same, nothing has been changed. No need to store the metadata
 			fmt.Printf("No changes. Process config will not be updated.\n")
 			return nil
@@ -58,10 +60,12 @@ var processEditCmd = &cobra.Command{
 			return err
 		}
 
-		return client.ProcessUpdate(id, config)
+		return client.ProcessUpdate(id, config, force)
 	},
 }
 
 func init() {
 	processCmd.AddCommand(processEditCmd)
+
+	processEditCmd.Flags().Bool("force", false, "Whether to force an config update")
 }

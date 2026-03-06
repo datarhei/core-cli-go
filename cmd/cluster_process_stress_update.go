@@ -93,7 +93,8 @@ var clusterProcessStressUpdateCmd = &cobra.Command{
 					config := process.Config
 
 					config.Reference = StringAlphanumeric(16)
-					client.ClusterProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config)
+					client.ClusterProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config, false)
+					client.ClusterProcessCommand(coreclient.NewProcessID(config.ID, config.Domain), "restart")
 
 					requests <- 2
 				}

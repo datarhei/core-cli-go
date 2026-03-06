@@ -100,9 +100,15 @@ var processStressRestartCmd = &cobra.Command{
 
 					client.ProcessAdd(*config)
 					config.Reference = StringAlphanumeric(16)
-					client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config)
+					err = client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), *config, false)
+					if err != nil {
+						fmt.Printf("error: %v\n", err)
+					}
 					client.Process(coreclient.NewProcessID(config.ID, config.Domain), []string{})
-					client.ProcessCommand(coreclient.NewProcessID(config.ID, config.Domain), "restart")
+					err = client.ProcessCommand(coreclient.NewProcessID(config.ID, config.Domain), "restart")
+					if err != nil {
+						fmt.Printf("error: %v\n", err)
+					}
 
 					requests <- 3
 				}

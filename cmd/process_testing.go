@@ -97,7 +97,7 @@ var processTestCmd = &cobra.Command{
 				if update {
 					config.LogPatterns = append(config.LogPatterns, StringAlphanumeric(28))
 
-					if err := client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), config); err != nil {
+					if err := client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), config, false); err != nil {
 						fmt.Printf("\nprocess %s (%4d / %4d) failed: %s\n", config.ID, i+1, n, err.Error())
 					}
 				}
@@ -123,7 +123,7 @@ var processTestCmd = &cobra.Command{
 					if update {
 						config.LogPatterns = append(config.LogPatterns, StringAlphanumeric(28))
 
-						if err := client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), config); err != nil {
+						if err := client.ProcessUpdate(coreclient.NewProcessID(config.ID, config.Domain), config, false); err != nil {
 							fmt.Printf("\nprocess %s (%4d / %4d) failed: %s\n", config.ID, i+1, n, err.Error())
 						}
 					}
@@ -143,7 +143,7 @@ var processTestCmd = &cobra.Command{
 		fmt.Printf("%4d / %4d deleted\r", 0, n)
 
 		for name := range processes {
-			if err := client.ProcessDelete(coreclient.NewProcessID(name, domain)); err != nil {
+			if err := client.ProcessDelete(coreclient.NewProcessID(name, domain), true); err != nil {
 				fmt.Printf("\nprocess %s (%4d / %4d) failed: %s\n", name, i+1, n, err.Error())
 			}
 

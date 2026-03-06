@@ -2,6 +2,7 @@ package coreclient
 
 import (
 	"bytes"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -48,6 +49,8 @@ func (r *restclient) SessionToken(name string, req []api.SessionTokenRequest) ([
 
 	e := json.NewEncoder(&buf)
 	e.Encode(req)
+
+	fmt.Printf("%s\n", buf.String())
 
 	data, err := r.call("PUT", "/v3/session/token/"+url.PathEscape(name), nil, nil, "application/json", &buf)
 	if err != nil {

@@ -20,12 +20,12 @@ func (r *restclient) ClusterProcessAdd(p api.ProcessConfig) error {
 	return r.processAdd("cluster", p)
 }
 
-func (r *restclient) ClusterProcessUpdate(id ProcessID, p api.ProcessConfig) error {
-	return r.processUpdate("cluster", id, p)
+func (r *restclient) ClusterProcessUpdate(id ProcessID, p api.ProcessConfig, force bool) error {
+	return r.processUpdate("cluster", id, p, force)
 }
 
-func (r *restclient) ClusterProcessDelete(id ProcessID) error {
-	return r.processDelete("cluster", id)
+func (r *restclient) ClusterProcessDelete(id ProcessID, purge bool) error {
+	return r.processDelete("cluster", id, purge)
 }
 
 func (r *restclient) ClusterProcessCommand(id ProcessID, command string) error {

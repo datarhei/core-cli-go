@@ -17,6 +17,7 @@ var clusterProcessEditCmd = &cobra.Command{
 	Long:  "Edit the config of the process with the given ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		force, _ := cmd.Flags().GetBool("force")
 		pid := args[0]
 
 		client, err := connectSelectedCore()
@@ -41,7 +42,7 @@ var clusterProcessEditCmd = &cobra.Command{
 			return err
 		}
 
-		if !modified {
+		if !force && !modified {
 			// They are the same, nothing has been changed. No need to store the metadata
 			fmt.Printf("No changes. Process config will not be updated.\n")
 			return nil
@@ -57,10 +58,12 @@ var clusterProcessEditCmd = &cobra.Command{
 			return err
 		}
 
-		return client.ClusterProcessUpdate(id, config)
+		return client.ClusterProcessUpdate(id, config, force)
 	},
 }
 
 func init() {
 	clusterProcessCmd.AddCommand(clusterProcessEditCmd)
+
+	clusterProcessEditCmd.Flags().Bool("force", false, "Whether to force an config update")
 }

@@ -17,6 +17,7 @@ var processDeleteCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pid := args[0]
 		reference, _ := cmd.Flags().GetBool("reference")
+		purge, _ := cmd.Flags().GetBool("purge")
 
 		client, err := connectSelectedCore()
 		if err != nil {
@@ -35,7 +36,7 @@ var processDeleteCmd = &cobra.Command{
 
 			for _, p := range list {
 				id := coreclient.ProcessIDFromProcess(p)
-				if err := client.ProcessDelete(id); err != nil {
+				if err := client.ProcessDelete(id, purge); err != nil {
 					fmt.Printf("%s error %s\n", id, err.Error())
 				} else {
 					fmt.Printf("%s delete\n", id)
@@ -45,7 +46,7 @@ var processDeleteCmd = &cobra.Command{
 			return nil
 		}
 
-		if err := client.ProcessDelete(id); err != nil {
+		if err := client.ProcessDelete(id, purge); err != nil {
 			return err
 		}
 
@@ -59,4 +60,5 @@ func init() {
 	processCmd.AddCommand(processDeleteCmd)
 
 	processDeleteCmd.Flags().BoolP("reference", "r", false, "Interpret the processid as reference and delete all processes with that reference")
+	processDeleteCmd.Flags().BoolP("purge", "", true, "Whether to purge files")
 }
