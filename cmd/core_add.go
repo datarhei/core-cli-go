@@ -17,6 +17,7 @@ var coreAddCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		username, _ := cmd.Flags().GetString("username")
 		password, _ := cmd.Flags().GetString("password")
+		description, _ := cmd.Flags().GetString("description")
 		overwrite, _ := cmd.Flags().GetBool("overwrite")
 
 		list := viper.GetStringMapString("cores.list")
@@ -43,6 +44,13 @@ var coreAddCmd = &cobra.Command{
 			}
 		}
 
+		if len(description) != 0 {
+			values := u.Query()
+			values.Set("description", description)
+
+			u.RawQuery = values.Encode()
+		}
+
 		list[name] = u.String()
 
 		viper.Set("cores.selected", args[0])
@@ -67,6 +75,7 @@ func init() {
 	// is called directly, e.g.:
 	coreAddCmd.Flags().StringP("username", "u", "", "username for the core")
 	coreAddCmd.Flags().StringP("password", "p", "", "password for the core")
+	coreAddCmd.Flags().StringP("description", "d", "", "description for the core")
 	coreAddCmd.MarkFlagsRequiredTogether("username", "password")
 	coreAddCmd.Flags().BoolP("overwrite", "o", false, "overwrite stored core if it exists")
 }

@@ -23,12 +23,12 @@ var clusterProcessStateCmd = &cobra.Command{
 
 		id := coreclient.ParseProcessID(pid)
 
-		process, err := client.ClusterProcess(id, []string{"state"})
+		state, err := client.ClusterProcessState(id)
 		if err != nil {
 			return err
 		}
 
-		if err := writeJSON(os.Stdout, process.State, true); err != nil {
+		if err := writeJSON(os.Stdout, state, true); err != nil {
 			return err
 		}
 

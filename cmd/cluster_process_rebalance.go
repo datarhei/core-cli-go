@@ -72,6 +72,8 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 		nodeProcessCount := map[string]int{}
 		nodeCPU := map[string]float64{}
 		totalCPU := float64(0)
+		nodeGPU := map[string]float64{}
+		totalGPU := float64(0)
 
 		for _, p := range list {
 			if len(p.Reference) != 0 {
@@ -82,6 +84,8 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 			nodeProcessCount[p.CoreID]++
 			nodeCPU[p.CoreID] += p.State.Resources.CPU.Current
 			totalCPU += p.State.Resources.CPU.Current
+			nodeGPU[p.CoreID] += p.State.Resources.GPU.Usage.Current
+			totalGPU += p.State.Resources.GPU.Usage.Current
 		}
 
 		// Sort processes by runtime, shortest to longest
@@ -101,6 +105,7 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 		nProcesses := len(processListWithoutReference)         // Number of processes
 		nProcessesPerNode := (nProcesses / nEligibleNodes) + 1 // Desired number of processes per node
 		nCPUPerNode := (totalCPU / float64(nEligibleNodes))    // Desired CPU per node
+		nGPUPerNode := (totalGPU / float64(nEligibleNodes))    // Desired GPU per node
 
 		if prio == "cpu" {
 			for nodeid, cpu := range nodeCPU {
@@ -117,6 +122,26 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 					})
 
 					diff -= p.State.Resources.CPU.Current
+					if diff <= 0 {
+						break
+					}
+				}
+			}
+		} else if prio == "gpu" {
+			for nodeid, gpu := range nodeGPU {
+				diff := gpu - nGPUPerNode
+				if diff <= 0 {
+					continue
+				}
+
+				// This node has too many processes, move some away
+				for _, p := range processListNode[nodeid] {
+					relocateList = append(relocateList, relocateProcess{
+						id:       coreclient.NewProcessID(p.ID, p.Domain),
+						fromNode: p.CoreID,
+					})
+
+					diff -= p.State.Resources.GPU.Usage.Current
 					if diff <= 0 {
 						break
 					}
@@ -151,6 +176,8 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 		nodeProcessCount = map[string]int{}               // Number of processes per node
 		nodeCPU = map[string]float64{}
 		totalCPU = float64(0)
+		nodeGPU = map[string]float64{}
+		totalGPU = float64(0)
 
 		// Group processes by their reference
 		for _, p := range list {
@@ -163,9 +190,12 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 			processReferenceMap[p.Reference] = ref
 
 			nodeProcessCount[p.CoreID]++
-			nodeCPU[p.CoreID] += p.State.Resources.CPU.Current
 
+			nodeCPU[p.CoreID] += p.State.Resources.CPU.Current
 			totalCPU += p.State.Resources.CPU.Current
+
+			nodeGPU[p.CoreID] += p.State.Resources.GPU.Usage.Current
+			totalGPU += p.State.Resources.GPU.Usage.Current
 		}
 
 		processListWithReference := []api.Process{}
@@ -188,6 +218,9 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 			if prio == "cpu" {
 				return processListWithReference[a].State.Resources.CPU.Current > processListWithReference[b].State.Resources.CPU.Current
 			}
+			if prio == "gpu" {
+				return processListWithReference[a].State.Resources.GPU.Usage.Current > processListWithReference[b].State.Resources.GPU.Usage.Current
+			}
 			return processListWithReference[a].State.Runtime < processListWithReference[b].State.Runtime
 		})
 
@@ -203,6 +236,7 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 		// Calculate desired number of processes per node
 		nProcessesPerNode = (nProcesses / nEligibleNodes) + 1
 		nCPUPerNode = (totalCPU / float64(nEligibleNodes)) // Desired CPU per node
+		nGPUPerNode = (totalGPU / float64(nEligibleNodes)) // Desired CPU per node
 
 		if prio == "cpu" {
 			for nodeid, cpu := range nodeCPU {
@@ -223,6 +257,32 @@ var clusterProcessRebalanceCmd = &cobra.Command{
 						})
 
 						diff -= p.State.Resources.CPU.Current
+					}
+
+					if diff <= 0 {
+						break
+					}
+				}
+			}
+		} else if prio == "gpu" {
+			for nodeid, gpu := range nodeGPU {
+				diff := gpu - nGPUPerNode
+				if diff <= 0 {
+					continue
+				}
+
+				// This node has too many processes, move some away. Here we have to
+				// move all processes with the same reference
+				for _, p := range processListNode[nodeid] {
+					reference := p.Reference
+
+					for _, p := range processReferenceMap[reference] {
+						relocateList = append(relocateList, relocateProcess{
+							id:       coreclient.NewProcessID(p.ID, p.Domain),
+							fromNode: p.CoreID,
+						})
+
+						diff -= p.State.Resources.GPU.Usage.Current
 					}
 
 					if diff <= 0 {
@@ -291,5 +351,5 @@ func init() {
 	clusterProcessCmd.AddCommand(clusterProcessRebalanceCmd)
 
 	clusterProcessRebalanceCmd.Flags().BoolP("execute", "x", false, "Actually execute the cleanup")
-	clusterProcessRebalanceCmd.Flags().StringP("prio", "p", "", "Rebalance prio count|cpu|memory")
+	clusterProcessRebalanceCmd.Flags().StringP("prio", "p", "", "Rebalance prio count|cpu|memory|gpu")
 }

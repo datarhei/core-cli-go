@@ -88,19 +88,19 @@ type RestClient interface {
 	MetricsList() ([]api.MetricsDescription, error)              // GET /v3/metrics
 	Metrics(query api.MetricsQuery) (api.MetricsResponse, error) // POST /v3/metrics
 
-	ProcessList(opts ProcessListOptions) ([]api.Process, error)               // GET /v3/process
-	ProcessAdd(p api.ProcessConfig) error                                     // POST /v3/process
-	Process(id ProcessID, filter []string) (api.Process, error)               // GET /v3/process/{id}
-	ProcessUpdate(id ProcessID, p api.ProcessConfig, force bool) error        // PUT /v3/process/{id}
-	ProcessDelete(id ProcessID, purge bool) error                             // DELETE /v3/process/{id}
-	ProcessCommand(id ProcessID, command string) error                        // PUT /v3/process/{id}/command
-	ProcessProbe(id ProcessID) (api.Probe, error)                             // GET /v3/process/{id}/probe
-	ProcessProbeConfig(config api.ProcessConfig) (api.Probe, error)           // POST /v3/process/probe
-	ProcessConfig(id ProcessID) (api.ProcessConfig, error)                    // GET /v3/process/{id}/config
-	ProcessReport(id ProcessID) (api.ProcessReport, error)                    // GET /v3/process/{id}/report
-	ProcessState(id ProcessID) (api.ProcessState, error)                      // GET /v3/process/{id}/state
-	ProcessMetadata(id ProcessID, key string) (api.Metadata, error)           // GET /v3/process/{id}/metadata/{key}
-	ProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error // PUT /v3/process/{id}/metadata/{key}
+	ProcessList(opts ProcessListOptions) ([]api.Process, error)                         // GET /v3/process
+	ProcessAdd(p api.ProcessConfig) error                                               // POST /v3/process
+	Process(id ProcessID, filter []string) (api.Process, error)                         // GET /v3/process/{id}
+	ProcessUpdate(id ProcessID, p api.ProcessConfig, force bool) error                  // PUT /v3/process/{id}
+	ProcessDelete(id ProcessID, purge bool) error                                       // DELETE /v3/process/{id}
+	ProcessCommand(id ProcessID, command string) error                                  // PUT /v3/process/{id}/command
+	ProcessProbe(id ProcessID) (api.Probe, error)                                       // GET /v3/process/{id}/probe
+	ProcessProbeConfig(config api.ProcessConfig) (api.Probe, error)                     // POST /v3/process/probe
+	ProcessConfig(id ProcessID) (api.ProcessConfig, error)                              // GET /v3/process/{id}/config
+	ProcessReport(id ProcessID, created_at, exited_at int64) (api.ProcessReport, error) // GET /v3/process/{id}/report
+	ProcessState(id ProcessID) (api.ProcessState, error)                                // GET /v3/process/{id}/state
+	ProcessMetadata(id ProcessID, key string) (api.Metadata, error)                     // GET /v3/process/{id}/metadata/{key}
+	ProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error           // PUT /v3/process/{id}/metadata/{key}
 
 	PlayoutStatus(id ProcessID, inputID string) (api.PlayoutStatus, error) // GET /v3/process/{id}/playout/{inputid}/status
 	PlayoutReopen(id ProcessID, inputID string) (bool, error)              // GET /v3/process/{id}/playout/{inputid}/reopen
@@ -130,6 +130,8 @@ type RestClient interface {
 	ClusterNodeFilesystemDeleteFile(id, storage, path string) error                             // DELETE /v3/cluster/node/{id}/fs/{storage}/{path}
 	ClusterNodeFilesystemPutFile(id, storage, path string, data io.Reader) error                // PUT /v3/cluster/node/{id}/fs/{storage}/{path}
 	ClusterNodeFilesystemGetFile(id, storage, path string) (io.ReadCloser, error)               // GET /v3/cluster/node/{id}/fs/{storage}/{path}
+	ClusterNodeFilesystemCopyFile(id, dstfs, dstpath, srcfs, srcpath string) error              // PUT /v3/cluster/node/{id}/fs
+	ClusterNodeFilesystemMoveFile(id, dstfs, dstpath, srcfs, srcpath string) error              // PUT /v3/cluster/node/{id}/fs
 
 	ClusterDBProcessList() ([]api.Process, error)        // GET /v3/cluster/db/process
 	ClusterDBProcess(id ProcessID) (api.Process, error)  // GET /v3/cluster/db/process/{id}
@@ -143,16 +145,19 @@ type RestClient interface {
 
 	ClusterFilesystemList(name, pattern, sort, order string) ([]api.FileInfo, error) // GET /v3/cluster/fs/{storage}
 
-	ClusterProcessList(opts ProcessListOptions) ([]api.Process, error)                    // GET /v3/cluster/process
-	ClusterProcess(id ProcessID, filter []string) (api.Process, error)                    // GET /v3/cluster/process/{id}
-	ClusterProcessAdd(p api.ProcessConfig) error                                          // POST /v3/cluster/process
-	ClusterProcessUpdate(id ProcessID, p api.ProcessConfig, force bool) error             // PUT /v3/cluster/process/{id}
-	ClusterProcessDelete(id ProcessID, purge bool) error                                  // DELETE /v3/cluster/process/{id}
-	ClusterProcessCommand(id ProcessID, command string) error                             // PUT /v3/cluster/process/{id}/command
-	ClusterProcessMetadata(id ProcessID, key string) (api.Metadata, error)                // GET /v3/cluster/process/{id}/metadata/{key}
-	ClusterProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error      // PUT /v3/cluster/process/{id}/metadata/{key}
-	ClusterProcessProbe(id ProcessID) (api.Probe, error)                                  // GET /v3/cluster/process/{id}/probe
-	ClusterProcessProbeConfig(config api.ProcessConfig, coreid string) (api.Probe, error) // POST /v3/cluster/process/probe
+	ClusterProcessList(opts ProcessListOptions) ([]api.Process, error)                         // GET /v3/cluster/process
+	ClusterProcess(id ProcessID, filter []string) (api.Process, error)                         // GET /v3/cluster/process/{id}
+	ClusterProcessConfig(id ProcessID) (api.ProcessConfig, error)                              // GET /v3/cluster/process/{id}/config
+	ClusterProcessReport(id ProcessID, created_at, exited_at int64) (api.ProcessReport, error) // GET /v3/cluster/process/{id}/report
+	ClusterProcessState(id ProcessID) (api.ProcessState, error)                                // GET /v3/cluster/process/{id}/state
+	ClusterProcessAdd(p api.ProcessConfig) error                                               // POST /v3/cluster/process
+	ClusterProcessUpdate(id ProcessID, p api.ProcessConfig, force bool) error                  // PUT /v3/cluster/process/{id}
+	ClusterProcessDelete(id ProcessID, purge bool) error                                       // DELETE /v3/cluster/process/{id}
+	ClusterProcessCommand(id ProcessID, command string) error                                  // PUT /v3/cluster/process/{id}/command
+	ClusterProcessMetadata(id ProcessID, key string) (api.Metadata, error)                     // GET /v3/cluster/process/{id}/metadata/{key}
+	ClusterProcessMetadataSet(id ProcessID, key string, metadata api.Metadata) error           // PUT /v3/cluster/process/{id}/metadata/{key}
+	ClusterProcessProbe(id ProcessID) (api.Probe, error)                                       // GET /v3/cluster/process/{id}/probe
+	ClusterProcessProbeConfig(config api.ProcessConfig, coreid string) (api.Probe, error)      // POST /v3/cluster/process/probe
 
 	ClusterRelocateProcess(id ProcessID, nodeid string) error // PUT /v3/cluster/reallocate
 

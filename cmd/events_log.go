@@ -42,6 +42,8 @@ var eventsLogCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
+		writeJSON(os.Stdout, filters, true)
+
 		events, err := client.Events(ctx, filters)
 		if err != nil {
 			return err

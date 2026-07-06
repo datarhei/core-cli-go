@@ -10,9 +10,11 @@ import (
 )
 
 type coreEdit struct {
+	Name         string `json:"name"`
 	Address      string `json:"address"`
 	Username     string `json:"username"`
 	Password     string `json:"password"`
+	Description  string `json:"description"`
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }
@@ -48,11 +50,13 @@ var coreEditCmd = &cobra.Command{
 		query := u.Query()
 
 		core := coreEdit{
+			Name:         name,
 			Address:      u.Scheme + "://" + u.Host + u.Path,
 			Username:     u.User.Username(),
 			Password:     password,
-			AccessToken:  u.Query().Get("accessToken"),
-			RefreshToken: u.Query().Get("refreshToken"),
+			Description:  query.Get("description"),
+			AccessToken:  query.Get("accessToken"),
+			RefreshToken: query.Get("refreshToken"),
 		}
 
 		data, err := json.MarshalIndent(core, "", "   ")
@@ -104,9 +108,25 @@ var coreEditCmd = &cobra.Command{
 			query.Set("refreshToken", editedCore.RefreshToken)
 		}
 
+		if len(editedCore.Description) == 0 {
+			query.Del("description")
+		} else {
+			query.Set("description", editedCore.Description)
+		}
+
 		u.RawQuery = query.Encode()
 
-		list[name] = u.String()
+		if editedCore.Name == name {
+			list[name] = u.String()
+		} else {
+			_, ok := list[editedCore.Name]
+			if ok {
+				return fmt.Errorf("conflict with other core with the same name '%s'", editedCore.Name)
+			}
+
+			list[editedCore.Name] = u.String()
+			delete(list, name)
+		}
 
 		viper.Set("cores.list", list)
 		viper.WriteConfig()

@@ -43,6 +43,24 @@ func (r *restclient) FilesystemList(storage, pattern, sort, order string) ([]api
 	return files, err
 }
 
+func (r *restclient) FilesystemOperation(id, op, source, target string, ratelimit uint64) error {
+	var buf bytes.Buffer
+
+	p := api.FilesystemOperation{
+		Operation: op,
+		Source:    source,
+		Target:    target,
+		RateLimit: ratelimit,
+	}
+
+	e := json.NewEncoder(&buf)
+	e.Encode(p)
+
+	_, err := r.call("PUT", "/v3/fs", nil, nil, "application/json", &buf)
+
+	return err
+}
+
 func (r *restclient) FilesystemHasFile(name, path string) bool {
 	if !filepath.IsAbs(path) {
 		path = "/" + path

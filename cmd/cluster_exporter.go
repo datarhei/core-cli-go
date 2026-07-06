@@ -250,6 +250,7 @@ type clusterProcessCollector struct {
 	processResourcesMemDesc *prometheus.Desc
 	processInputFPSDesc     *prometheus.Desc
 	processInputSpeedDesc   *prometheus.Desc
+	processLogEventsDesc    *prometheus.Desc
 }
 
 func newClusterProcessCollector(client coreclient.RestClient, node string) prometheus.Collector {
@@ -276,6 +277,10 @@ func newClusterProcessCollector(client coreclient.RestClient, node string) prome
 			"cluster_process_input_speed",
 			"Cluster process input speed by id and input",
 			[]string{"node", "id", "input"}, nil),
+		processLogEventsDesc: prometheus.NewDesc(
+			"cluster_process_logevents_counter",
+			"Cluster process log events counter by id, input, and loglevel",
+			[]string{"node", "id", "level"}, nil),
 	}
 }
 
@@ -285,11 +290,12 @@ func (c *clusterProcessCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.processResourcesMemDesc
 	ch <- c.processInputFPSDesc
 	ch <- c.processInputSpeedDesc
+	ch <- c.processLogEventsDesc
 }
 
 func (c *clusterProcessCollector) Collect(ch chan<- prometheus.Metric) {
 	processes, err := c.client.ProcessList(coreclient.ProcessListOptions{
-		Filter: []string{"state"},
+		Filter: []string{"state", "report"},
 	})
 	if err != nil {
 		return
@@ -317,6 +323,10 @@ func (c *clusterProcessCollector) Collect(ch chan<- prometheus.Metric) {
 			}
 
 			ch <- prometheus.MustNewConstMetric(c.processInputFPSDesc, prometheus.GaugeValue, float64(input.FPS), c.node, p.ID, input.ID+":"+strconv.FormatUint(input.Stream, 10))
+		}
+
+		for level, value := range p.Report.LogLines {
+			ch <- prometheus.MustNewConstMetric(c.processLogEventsDesc, prometheus.CounterValue, float64(value), c.node, p.ID, level)
 		}
 	}
 

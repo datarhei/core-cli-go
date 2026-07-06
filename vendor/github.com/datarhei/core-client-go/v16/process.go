@@ -3,6 +3,7 @@ package coreclient
 import (
 	"bytes"
 	"encoding/json"
+	"math"
 	"net/url"
 	"strconv"
 	"strings"
@@ -288,6 +289,75 @@ func (r *restclient) processProbeConfig(where string, config api.ProcessConfig, 
 	return p, err
 }
 
+func (r *restclient) processConfig(where string, id ProcessID) (api.ProcessConfig, error) {
+	var p api.ProcessConfig
+
+	path := "/v3/process/" + url.PathEscape(id.ID) + "/config"
+	if where == "cluster" {
+		path = "/v3/cluster/process/" + url.PathEscape(id.ID) + "/config"
+	}
+
+	query := &url.Values{}
+	query.Set("domain", id.Domain)
+
+	data, err := r.call("GET", path, query, nil, "", nil)
+	if err != nil {
+		return p, err
+	}
+
+	err = json.Unmarshal(data, &p)
+
+	return p, err
+}
+
+func (r *restclient) processReport(where string, id ProcessID, created_at, exited_at int64) (api.ProcessReport, error) {
+	var p api.ProcessReport
+
+	path := "/v3/process/" + url.PathEscape(id.ID) + "/report"
+	if where == "cluster" {
+		path = "/v3/cluster/process/" + url.PathEscape(id.ID) + "/report"
+	}
+
+	query := &url.Values{}
+	query.Set("domain", id.Domain)
+	if created_at != math.MinInt64 {
+		query.Set("created_at", strconv.FormatInt(created_at, 10))
+	}
+	if exited_at != math.MinInt64 {
+		query.Set("exited_at", strconv.FormatInt(exited_at, 10))
+	}
+
+	data, err := r.call("GET", path, query, nil, "", nil)
+	if err != nil {
+		return p, err
+	}
+
+	err = json.Unmarshal(data, &p)
+
+	return p, err
+}
+
+func (r *restclient) processState(where string, id ProcessID) (api.ProcessState, error) {
+	var p api.ProcessState
+
+	path := "/v3/process/" + url.PathEscape(id.ID) + "/state"
+	if where == "cluster" {
+		path = "/v3/cluster/process/" + url.PathEscape(id.ID) + "/state"
+	}
+
+	query := &url.Values{}
+	query.Set("domain", id.Domain)
+
+	data, err := r.call("GET", path, query, nil, "", nil)
+	if err != nil {
+		return p, err
+	}
+
+	err = json.Unmarshal(data, &p)
+
+	return p, err
+}
+
 func (r *restclient) ProcessList(opts ProcessListOptions) ([]api.Process, error) {
 	return r.processList("", opts)
 }
@@ -329,49 +399,13 @@ func (r *restclient) ProcessProbeConfig(config api.ProcessConfig) (api.Probe, er
 }
 
 func (r *restclient) ProcessConfig(id ProcessID) (api.ProcessConfig, error) {
-	var p api.ProcessConfig
-
-	query := &url.Values{}
-	query.Set("domain", id.Domain)
-
-	data, err := r.call("GET", "/v3/process/"+url.PathEscape(id.ID)+"/config", query, nil, "", nil)
-	if err != nil {
-		return p, err
-	}
-
-	err = json.Unmarshal(data, &p)
-
-	return p, err
+	return r.processConfig("", id)
 }
 
-func (r *restclient) ProcessReport(id ProcessID) (api.ProcessReport, error) {
-	var p api.ProcessReport
-
-	query := &url.Values{}
-	query.Set("domain", id.Domain)
-
-	data, err := r.call("GET", "/v3/process/"+url.PathEscape(id.ID)+"/report", query, nil, "", nil)
-	if err != nil {
-		return p, err
-	}
-
-	err = json.Unmarshal(data, &p)
-
-	return p, err
+func (r *restclient) ProcessReport(id ProcessID, created_at, exited_at int64) (api.ProcessReport, error) {
+	return r.processReport("", id, created_at, exited_at)
 }
 
 func (r *restclient) ProcessState(id ProcessID) (api.ProcessState, error) {
-	var p api.ProcessState
-
-	query := &url.Values{}
-	query.Set("domain", id.Domain)
-
-	data, err := r.call("GET", "/v3/process/"+url.PathEscape(id.ID)+"/state", query, nil, "", nil)
-	if err != nil {
-		return p, err
-	}
-
-	err = json.Unmarshal(data, &p)
-
-	return p, err
+	return r.processState("", id)
 }

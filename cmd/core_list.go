@@ -25,7 +25,7 @@ var coreListCmd = &cobra.Command{
 
 		t := table.NewWriter()
 
-		t.AppendHeader(table.Row{"Name", "Host", "Version", "Name", "ID"})
+		t.AppendHeader(table.Row{"Name", "Host", "Description", "Version", "Name", "ID"})
 
 		for name, host := range list {
 			if name == selected {
@@ -35,15 +35,17 @@ var coreListCmd = &cobra.Command{
 			version := ""
 			corename := ""
 			coreid := ""
+			description := ""
 
 			if u, err := url.Parse(host); err == nil {
 				host = u.Scheme + "://" + u.Host
 				version = u.Query().Get("version")
 				corename = u.Query().Get("name")
 				coreid = u.Query().Get("id")
+				description = u.Query().Get("description")
 			}
 
-			t.AppendRow(table.Row{name, host, version, corename, coreid})
+			t.AppendRow(table.Row{name, host, description, version, corename, coreid})
 		}
 
 		t.SortBy([]table.SortBy{

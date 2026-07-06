@@ -67,6 +67,7 @@ type ProcessConfigLimits struct {
 	GPUDecoder float64 `json:"gpu_decoder" jsonschema:"minimum=0"`                       // percent 0-100
 	GPUMemory  uint64  `json:"gpu_memory_mbytes" jsonschema:"minimum=0" format:"uint64"` // megabytes
 	WaitFor    uint64  `json:"waitfor_seconds" jsonschema:"minimum=0" format:"uint64"`   // seconds
+	LogEvents  float64 `json:"log_event_rate" jsonschema:"minimum=0" format:"float64"`   // rate limit for log events
 }
 
 // ProcessConfig represents the configuration of an ffmpeg process

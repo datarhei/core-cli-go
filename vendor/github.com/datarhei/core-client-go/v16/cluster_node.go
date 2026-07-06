@@ -100,6 +100,46 @@ func (r *restclient) ClusterNodeFilesystemList(id, storage, pattern, sort, order
 	return files, err
 }
 
+func (r *restclient) ClusterNodeFilesystemMoveFile(id, dstfs, dstpath, srcfs, srcpath string) error {
+	fsop := api.FilesystemOperation{
+		Operation: "move",
+		Source:    srcfs + ":" + srcpath,
+		Target:    dstfs + ":" + dstpath,
+	}
+
+	var buf bytes.Buffer
+
+	e := json.NewEncoder(&buf)
+	e.Encode(fsop)
+
+	_, err := r.call("PUT", "/v3/cluster/node/"+url.PathEscape(id)+"/fs", nil, nil, "application/json", &buf)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *restclient) ClusterNodeFilesystemCopyFile(id, dstfs, dstpath, srcfs, srcpath string) error {
+	fsop := api.FilesystemOperation{
+		Operation: "copy",
+		Source:    srcfs + ":" + srcpath,
+		Target:    dstfs + ":" + dstpath,
+	}
+
+	var buf bytes.Buffer
+
+	e := json.NewEncoder(&buf)
+	e.Encode(fsop)
+
+	_, err := r.call("PUT", "/v3/cluster/node/"+url.PathEscape(id)+"/fs", nil, nil, "application/json", &buf)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *restclient) ClusterNodeFilesystemPutFile(id, storage, path string, data io.Reader) error {
 	if !filepath.IsAbs(path) {
 		path = "/" + path

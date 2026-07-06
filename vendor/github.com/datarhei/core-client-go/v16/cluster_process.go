@@ -48,6 +48,18 @@ func (r *restclient) ClusterProcessProbeConfig(config api.ProcessConfig, coreid 
 	return r.processProbeConfig("cluster", config, coreid)
 }
 
+func (r *restclient) ClusterProcessConfig(id ProcessID) (api.ProcessConfig, error) {
+	return r.processConfig("cluster", id)
+}
+
+func (r *restclient) ClusterProcessReport(id ProcessID, created_at, exited_at int64) (api.ProcessReport, error) {
+	return r.processReport("cluster", id, created_at, exited_at)
+}
+
+func (r *restclient) ClusterProcessState(id ProcessID) (api.ProcessState, error) {
+	return r.processState("cluster", id)
+}
+
 func (r *restclient) ClusterRelocateProcess(id ProcessID, nodeid string) error {
 	var buf bytes.Buffer
 
